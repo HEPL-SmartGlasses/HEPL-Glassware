@@ -57,19 +57,26 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define SPI1_XBEE_CS_Pin GPIO_PIN_4
-#define SPI1_XBEE_CS_GPIO_Port GPIOA
-#define Up_Button_Pin GPIO_PIN_0
-#define Up_Button_GPIO_Port GPIOB
-#define Up_Button_EXTI_IRQn EXTI0_IRQn
-#define Menu_Button_Pin GPIO_PIN_1
-#define Menu_Button_GPIO_Port GPIOB
-#define Menu_Button_EXTI_IRQn EXTI1_IRQn
-#define Down_Button_Pin GPIO_PIN_2
-#define Down_Button_GPIO_Port GPIOB
-#define Down_Button_EXTI_IRQn EXTI2_IRQn
-#define SPI2_SD_CS_Pin GPIO_PIN_11
+#define BT_EN_Pin GPIO_PIN_14
+#define BT_EN_GPIO_Port GPIOC
+#define SPI1_CAM_CS_Pin GPIO_PIN_4
+#define SPI1_CAM_CS_GPIO_Port GPIOA
+#define SPI2_SD_CS_Pin GPIO_PIN_0
 #define SPI2_SD_CS_GPIO_Port GPIOB
+#define SPI2_FLASH_CS_Pin GPIO_PIN_11
+#define SPI2_FLASH_CS_GPIO_Port GPIOB
+#define FLASH_HOLD_Pin GPIO_PIN_13
+#define FLASH_HOLD_GPIO_Port GPIOB
+#define FLASH_WP_Pin GPIO_PIN_8
+#define FLASH_WP_GPIO_Port GPIOA
+#define SWDIO_Pin GPIO_PIN_12
+#define SWDIO_GPIO_Port GPIOA
+#define SWO_Pin GPIO_PIN_13
+#define SWO_GPIO_Port GPIOA
+#define SPI3_XBEE_ATTN_Pin GPIO_PIN_14
+#define SPI3_XBEE_ATTN_GPIO_Port GPIOA
+#define SPI3_XBEE_CS_Pin GPIO_PIN_15
+#define SPI3_XBEE_CS_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 
