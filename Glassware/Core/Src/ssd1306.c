@@ -21,6 +21,7 @@
    ----------------------------------------------------------------------
  */
 #include "ssd1306.h"
+#include <math.h>
 
 extern I2C_HandleTypeDef hi2c1;
 /* Write command */
@@ -597,6 +598,40 @@ void SSD1306_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, SSD1306_COLOR_t
         SSD1306_DrawLine(x0 + y, y0 + x, x0 - y, y0 + x, c);
         SSD1306_DrawLine(x0 + y, y0 - x, x0 - y, y0 - x, c);
     }
+}
+
+
+void SSD1306_DrawArrow(uint16_t xc, uint16_t yc, uint16_t theta, SSD1306_COLOR_t c) {
+	// define the pair of lines to draw
+	uint16_t x0 = 1, y0 = 1, dx1 = 1, dx2 = 2, dy1 = 2, dy2 = 1;
+
+	uint16_t x1 = x0 - dx1, y1 = y0 + dx1;
+	uint16_t x2 = x0 - dx1, y2 = y0 - dx1;
+
+	uint16_t x3 = x0 - dx1 - dx2, y3 = y0 + dx2;
+	uint16_t x4 = x0 - dx1 - dx2, y4 = y0 - dx2;
+
+	uint16_t x5 = x0 - dx1, y5 = y0 + dx2;
+	uint16_t x6 = x0 - dx1, y6 = y0 - dx2;
+
+	// define connection pairs
+    uint16_t xpoints[8] = { x0, x1, x5, x3, x4, x6, x2, x0 };
+    uint16_t ypoints[8] = { y0, y1, y5, y3, y4, y6, y2, y0 };
+
+    // rotate by theta
+    uint16_t cosd = cos(theta), sind = sin(theta);
+
+    // draw line between points
+    for (size_t i = 0; i < 7; i++) {
+    	uint16_t xp = cosd * xpoints[i] - sind * xpoints[i] + xc;
+    	uint16_t yp = sind * ypoints[i] + cosd * ypoints[i] + yc;
+
+    	uint16_t xp2 = cosd * xpoints[i + 1] - sind * xpoints[i + 1] + xc;
+    	uint16_t yp2 = sind * ypoints[i + 1] + cosd * ypoints[i + 1] + yc;
+
+    	SSD1306_DrawLine(xp, yp, xp2, yp2, c);
+    }
+
 }
  
 

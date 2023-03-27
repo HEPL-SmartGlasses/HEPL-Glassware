@@ -291,7 +291,14 @@ void SSD1306_Stopscroll(void);
 
 void SSD1306_InvertDisplay (int i);
 
-
+/**
+ * @brief  Draws an Arrow
+ * @param  xc:  x coordinate of arrow's center
+ * @param  yc:  x coordinate of arrow's center
+ * @param  theta:  the orientation in rad CCW the arrow is pointing to
+ * @param  color : 1-> white/blue, 0-> black
+ */
+void SSD1306_DrawArrow(uint16_t xc, uint16_t yc, uint16_t theta, SSD1306_COLOR_t c);
 
 
 
