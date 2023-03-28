@@ -65,6 +65,13 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
+enum selectedLocation {eecs1311 = 0, wbathroom, mbathroom, vending, stairs};
+menuState state;
+selectedLocation location;
+uint16_t numLocations = 5; // number of supported locations
+uint16_t polygonSize = 4;  // standard polygon coordinates number
+uint16_t *** map = malloc(numLocations * sizeof(uint16_t **)); // map storage
+uint16_t polygonsRequired[5] = {1, 2, 1, 1, 1}; // buildings required polygon number
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -82,7 +89,63 @@ static void MX_SPI1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void Map_init() {
+	// allocate location storage
+	// coordinates are acceses by map[loc][axis][polygonNum]
+	// i.e EECS 1311 x coordination of 2nd polygon is map[0][0][1]
+	for (size_t i = 0; i < numLocations){
+		// allocate x/y coordinates
+		map[i] = malloc( 2 * sizeof(uint16_t *));
 
+		// allocate polygon size for each
+		map[i][0] = malloc( (polygonSize * polygonsRequired[i]) * sizeof(uint16_t *));
+		map[i][1] = malloc( (polygonSize * polygonsRequired[i]) * sizeof(uint16_t *));
+	}
+
+	// TODO: put actual coordinates stored in CCW fashion from bottom left
+
+	// EECS 1311 coordinates
+	map[0][0][0] = 1; map[0][0][1] = 1; map[0][0][2] = 1; map[0][0][3] = 1; // x
+	map[0][1][0] = 1; map[0][1][1] = 1; map[0][1][2] = 1; map[0][1][3] = 1; // y
+
+	// Women's bathroom coordinates
+	map[1][0][0] = 1; map[1][0][1] = 1; map[1][0][2] = 1; map[1][0][3] = 1; // x
+	map[1][0][4] = 1; map[1][0][5] = 1; map[1][0][6] = 1; map[1][0][7] = 1; // x
+
+	map[1][1][0] = 1; map[1][1][1] = 1; map[1][1][2] = 1; map[1][1][3] = 1; // y
+	map[1][1][4] = 1; map[1][1][5] = 1; map[1][1][6] = 1; map[1][1][7] = 1; // y
+
+	// Men's bathroom coordinates
+	map[2][0][0] = 1; map[2][0][1] = 1; map[2][0][2] = 1; map[2][0][3] = 1; // x
+	map[2][1][0] = 1; map[2][1][1] = 1; map[2][1][2] = 1; map[2][1][3] = 1; // y
+
+	// Vending machine coordinates
+	map[3][0][0] = 1; map[3][0][1] = 1; map[3][0][2] = 1; map[3][0][3] = 1; // x
+	map[3][1][0] = 1; map[3][1][1] = 1; map[3][1][2] = 1; map[3][1][3] = 1; // y
+
+	// Stairs coordinates
+	map[4][0][0] = 1; map[4][0][1] = 1; map[4][0][2] = 1; map[4][0][3] = 1; // x
+	map[4][1][0] = 1; map[4][1][1] = 1; map[4][1][2] = 1; map[4][1][3] = 1; // y
+}
+
+bool is_inside_polygon(uint16_t x, uint16_t y){
+	uint16_t numPol = polygonsRequired[location];
+	bool is_inside = false;
+
+	for(size_t i = 0; i < numPol; i++){
+		// retrieve position data
+		uint16_t x0 = map[location][0][4*i]    , x1 = map[location][0][4*i + 1],
+				 x2 = map[location][0][4*i + 2], x3 = map[location][0][4*i + 3],
+				 y0 = map[location][1][4*i]    , y1 = map[location][1][4*i + 1],
+				 y2 = map[location][1][4*i + 2], y3 = map[location][1][4*i + 3];
+
+		// check bounds
+		is_inside |= ((x > x0) && (x > x3) && (x < x2) && (x < x1)) &&
+				     ((y > y0) && (y > y1) && (y < y2) && (y < y3));
+	}
+
+	return is_inside;
+}
 /* USER CODE END 0 */
 
 /**
@@ -101,7 +164,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  Map_init();
   /* USER CODE END Init */
 
   /* Configure the system clock */

@@ -602,6 +602,9 @@ void SSD1306_DrawFilledCircle(int16_t x0, int16_t y0, int16_t r, SSD1306_COLOR_t
 
 
 void SSD1306_DrawArrow(uint16_t xc, uint16_t yc, uint16_t theta, SSD1306_COLOR_t c) {
+	// TODO: make sure values are positive
+	// TODO: test sine, cosine for integer outputs
+
 	// define the pair of lines to draw
 	uint16_t x0 = 1, y0 = 1, dx1 = 1, dx2 = 2, dy1 = 2, dy2 = 1;
 
