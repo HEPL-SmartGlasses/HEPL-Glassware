@@ -73,28 +73,23 @@ int findNode(Graph* graph, int x, int y) {
 }
 
 void buildGraphFromMap(Graph* graph, uint16_t ** map, size_t map_size){
-	// add nodes
+
 	for (int i = 0; i < map_size; i++){
 		 int x1 = map[i][1];
 		 int y1 = map[i][2];
 		 int x2 = map[i][3];
 		 int y2 = map[i][4];
 
+		 // add nodes
 		 addNode(graph, x1, y1);
 		 addNode(graph, x2, y2);
-	}
 
-	// add edges
-	for (int i = 0; i < map_size; i++){
-		 int x1 = map[i][1];
-		 int y1 = map[i][2];
-		 int x2 = map[i][3];
-		 int y2 = map[i][4];
-
+		 // add edges
 		 int idx1 = findNode(graph, x1, y1);
 		 int idx2 = findNode(graph, x2, y2);
 
 		 addEdge(graph, idx1, idx2);
 	}
+
 	return;
 }
