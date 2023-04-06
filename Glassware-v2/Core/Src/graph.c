@@ -15,7 +15,7 @@ Graph* createGraph() {
     return graph;
 }
 
-bool nodeExists(Graph* graph, int x, int y) {
+bool nodeExists(Graph* graph, double x, double y) {
     for (int i = 0; i < graph->numNodes; i++) {
         if (graph->nodes[i]->x == x && graph->nodes[i]->y == y) {
             return true;
@@ -33,7 +33,7 @@ bool edgeExists(Graph* graph, int elemL, int elemR) {
     return false;
 }
 
-void addNode(Graph* graph, int x, int y) {
+void addNode(Graph* graph, double x, double y) {
     if (nodeExists(graph, x, y)) {
         // printf("Node already exists in graph.\n");
         return;
@@ -61,7 +61,7 @@ void addEdge(Graph* graph, int elemL, int elemR) {
     graph->numEdges++;
 }
 
-int findNode(Graph* graph, int x, int y) {
+int findNode(Graph* graph, double x, double y) {
     if (!nodeExists(graph, x, y)) {
         // printf("Node already exists in graph.\n");
         return -1;
@@ -76,13 +76,13 @@ int findNode(Graph* graph, int x, int y) {
     return -1;
 }
 
-void buildGraphFromMap(Graph* graph, uint16_t ** map, size_t map_size){
+void buildGraphFromMap(Graph* graph, double ** map, int map_size){
 
 	for (int i = 0; i < map_size; i++){
-		 int x1 = map[i][1];
-		 int y1 = map[i][2];
-		 int x2 = map[i][3];
-		 int y2 = map[i][4];
+		 double x1 = map[i][1];
+		 double y1 = map[i][2];
+		 double x2 = map[i][3];
+		 double y2 = map[i][4];
 
 		 // add nodes
 		 addNode(graph, x1, y1);

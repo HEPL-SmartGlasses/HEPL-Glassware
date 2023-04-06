@@ -6,8 +6,8 @@
 #define MAX_EDGES 100
 
 typedef struct Node {
-    int x;
-    int y;
+    double x;
+    double y;
 } Node;
 
 typedef struct Edge {
@@ -24,14 +24,14 @@ typedef struct Graph {
 
 Graph* createGraph();
 
-bool nodeExists(Graph* graph, int x, int y);
+bool nodeExists(Graph* graph, double x, double y);
 
 bool edgeExists(Graph* graph, int elemL, int elemR);
 
-void addNode(Graph* graph, int x, int y);
+void addNode(Graph* graph, double x, double y);
 
 void addEdge(Graph* graph, int elemL, int elemR);
 
-int findNode(Graph* graph, int x, int y);
+int findNode(Graph* graph, double x, double y);
 
-void buildGraphFromMap(Graph* graph, uint16_t ** map, size_t map_size);
+void buildGraphFromMap(Graph* graph, double ** map, int map_size);

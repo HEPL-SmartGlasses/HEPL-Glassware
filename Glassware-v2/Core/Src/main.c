@@ -63,7 +63,7 @@ enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
 enum selectedLocation {eecs1311 = 0, wbathroom, mbathroom, vending, stairs};
 enum menuState menu;
 enum selectedLocation location;
-uint16_t ** map; // map storage
+double ** map; // map storage
 Graph * graph;
 /* USER CODE END PV */
 
@@ -92,7 +92,7 @@ int Map_init_SD(){
 	FRESULT fres;   //Result after operations
 	char* filename = "map.txt";
 
-	f_mount(&FatFs, "", 1); // 1 = mount now
+	fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
 
 	fres = f_open(&fil, filename, FA_READ);
     if (fres) return (int)fres;
@@ -105,10 +105,10 @@ int Map_init_SD(){
     /* Close the file */
     f_close(&fil);
 
-    map = malloc(count * sizeof(uint16_t *));
+    map = malloc(count * sizeof(double *));
 	for (int i = 0; i < count; i++){
 		// allocate x/y coordinates
-		map[i] = malloc( 4 * sizeof(uint16_t));
+		map[i] = malloc( 4 * sizeof(double));
 	}
 
     // Reopen file and read content
@@ -120,20 +120,20 @@ int Map_init_SD(){
     const char* del = " ";
 
     int i = 0;
-    while (f_gets(line, sizeof line, &fil)) {
+    while (f_gets(line, sizeof(line), &fil)) {
     	int j = 0;
         // printf(line);
         token = strtok(line, del);
-        int num = atoi(token);
+        double num = atof(token);
         map[i][j] = num;
 
         while(token != NULL){
-        	if (j > 3){ // file is badly formatted
-        		return 1;
+        	if (j >= 3){ // file is badly formatted
+        		break;
         	}
         	j++;
         	token = strtok(NULL, del);
-        	num = atoi(token);
+        	num = atof(token);
         	map[i][j] = num;
         }
         i++;
@@ -165,8 +165,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  graph = createGraph();
-  Map_init_SD();
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -185,6 +184,9 @@ int main(void)
   MX_SPI3_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
+
+  graph = createGraph();
+  Map_init_SD();
 
   // Initialize screen
   menu = dir;
