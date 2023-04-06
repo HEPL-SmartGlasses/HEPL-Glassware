@@ -37,9 +37,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SD_SPI_HANDLE hspi2
-#define SD_CS_GPIO_Port 'B'
-#define SD_CS_GPIO_Pin 0
+#define HSPI_SDCARD &hspi2
+#define SD_CS_PORT GPIOB
+#define SD_CS_PIN GPIO_PIN_0
 
 /* USER CODE END PD */
 
@@ -118,15 +118,14 @@ int main(void)
   enum menuState menu = dir;
   SSD1306_Init();
 
-
-  DRESULT temp = SD_disk_initialize(0);
+  //DRESULT temp = SD_disk_initialize(0);
 
   // Initialize SD card
   // some variables for FatFs
   FATFS FatFs; 	//Fatfs handle
   FIL fil; 		//File handle
   FRESULT fres; //Result after operations
-  char* filename = "/map.txt";
+  char* filename = "map.txt";
 
 
 //  uint8_t buf_tx[1] = {0xFF};
@@ -135,8 +134,7 @@ int main(void)
 //  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
 //  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
 
-  fres = f_mount(&FatFs, "", 1); // 1 = mount now
-  fres = f_mount(&FatFs, "", 1); // 1 = mount now
+  fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
   if (fres != FR_OK)
   {
       #ifdef DEBUG
@@ -144,23 +142,23 @@ int main(void)
 	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
 	  SSD1306_UpdateScreen(); //display
       #endif
-	  while(1);
+//	  while(1);
   }
 
-//  #ifdef DEBUG
-//  DWORD free_clusters, free_sectors, total_sectors;
-//  FATFS* getFreeFs;
-//  fres = f_getfree("", &free_clusters, &getFreeFs);
-//  if (fres != FR_OK)
-//  {
-//	  SSD1306_GotoXY (0,0);
-//	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
-//	  SSD1306_UpdateScreen(); //display
+  #ifdef DEBUG
+  DWORD free_clusters, free_sectors, total_sectors;
+  FATFS* getFreeFs;
+  fres = f_getfree("", &free_clusters, &getFreeFs);
+  if (fres != FR_OK)
+  {
+	  SSD1306_GotoXY (0,0);
+	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
+	  SSD1306_UpdateScreen(); //display
 //	  while(1);
-//  }
-//  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-//  free_sectors = free_clusters * getFreeFs->csize;
-//  #endif
+  }
+  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
+  free_sectors = free_clusters * getFreeFs->csize;
+  #endif
 
   fres = f_open(&fil, filename, FA_READ);
   if (fres != FR_OK) {
@@ -169,11 +167,11 @@ int main(void)
 	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
 	  SSD1306_UpdateScreen();
  	  #endif
-	  while(1);
+//	  while(1);
   }
 
-  BYTE readBuf[30];
-  TCHAR* rres = f_gets((TCHAR*)readBuf, 30, &fil);
+  BYTE readBuf[50];
+  TCHAR* rres = f_gets((TCHAR*)readBuf, 50, &fil);
   if (rres == 0)
   {
       #ifdef DEBUG
@@ -181,7 +179,7 @@ int main(void)
 	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
 	  SSD1306_UpdateScreen();
       #endif
-	  while(1);
+//	  while(1);
   }
   f_close(&fil);
   #ifdef DEBUG
@@ -400,13 +398,13 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 7;
   hspi2.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi2.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  hspi2.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
   if (HAL_SPI_Init(&hspi2) != HAL_OK)
   {
     Error_Handler();
