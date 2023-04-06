@@ -66,9 +66,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_SPI2_Init(void);
-static void MX_SPI3_Init(void);
 static void MX_LPUART1_UART_Init(void);
+static void MX_SPI3_Init(void);
+static void MX_SPI2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -109,9 +109,9 @@ int main(void)
   MX_I2C1_Init();
   MX_FATFS_Init();
   MX_SPI1_Init();
-  MX_SPI2_Init();
-  MX_SPI3_Init();
   MX_LPUART1_UART_Init();
+  MX_SPI3_Init();
+  MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
   // Initialize screen
@@ -119,14 +119,24 @@ int main(void)
   SSD1306_Init();
 
 
+  DRESULT temp = SD_disk_initialize(0);
+
   // Initialize SD card
   // some variables for FatFs
   FATFS FatFs; 	//Fatfs handle
   FIL fil; 		//File handle
   FRESULT fres; //Result after operations
-  char* filename = "test.txt";
+  char* filename = "/map.txt";
 
-  fres = f_mount(&FatFs, "/", 1); // 1 = mount now
+
+//  uint8_t buf_tx[1] = {0xFF};
+//  uint8_t buf_rx[1] = {0x00};
+//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
+//  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
+//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
+
+  fres = f_mount(&FatFs, "", 1); // 1 = mount now
+  fres = f_mount(&FatFs, "", 1); // 1 = mount now
   if (fres != FR_OK)
   {
       #ifdef DEBUG
@@ -137,20 +147,20 @@ int main(void)
 	  while(1);
   }
 
-  #ifdef DEBUG
-  DWORD free_clusters, free_sectors, total_sectors;
-  FATFS* getFreeFs;
-  fres = f_getfree("", &free_clusters, &getFreeFs);
-  if (fres != FR_OK)
-  {
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
-	  SSD1306_UpdateScreen(); //display
-	  while(1);
-  }
-  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-  free_sectors = free_clusters * getFreeFs->csize;
-  #endif
+//  #ifdef DEBUG
+//  DWORD free_clusters, free_sectors, total_sectors;
+//  FATFS* getFreeFs;
+//  fres = f_getfree("", &free_clusters, &getFreeFs);
+//  if (fres != FR_OK)
+//  {
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
+//	  SSD1306_UpdateScreen(); //display
+//	  while(1);
+//  }
+//  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
+//  free_sectors = free_clusters * getFreeFs->csize;
+//  #endif
 
   fres = f_open(&fil, filename, FA_READ);
   if (fres != FR_OK) {
@@ -223,7 +233,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_MSI;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
+  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_8;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
@@ -261,7 +271,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00000004;
+  hi2c1.Init.Timing = 0x0010061A;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -390,7 +400,7 @@ static void MX_SPI2_Init(void)
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -457,16 +467,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, SPI2_SD_CS_Pin|GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8
-                          |GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(SPI2_SD_CS_GPIO_Port, SPI2_SD_CS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
@@ -478,10 +490,15 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : SPI2_SD_CS_Pin PB2 PB7 PB8
-                           PB9 */
-  GPIO_InitStruct.Pin = SPI2_SD_CS_Pin|GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8
-                          |GPIO_PIN_9;
+  /*Configure GPIO pin : SPI2_SD_CS_Pin */
+  GPIO_InitStruct.Pin = SPI2_SD_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(SPI2_SD_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PB2 PB7 PB8 PB9 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -496,7 +513,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : PH3 */
   GPIO_InitStruct.Pin = GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
 

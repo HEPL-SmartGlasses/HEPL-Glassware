@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -43,6 +44,8 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
+SPI_HandleTypeDef hspi1;
+
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -51,6 +54,7 @@ I2C_HandleTypeDef hi2c1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -89,7 +93,61 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_I2C1_Init();
+  MX_SPI1_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+
+  // Initialize SD card
+    // some variables for FatFs
+    FATFS FatFs; 	//Fatfs handle
+    FIL fil; 		//File handle
+    FRESULT fres; //Result after operations
+    char* filename = "/map.txt";
+
+
+  //  uint8_t buf_tx[1] = {0xFF};
+  //  uint8_t buf_rx[1] = {0x00};
+  //  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
+  //  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
+  //  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
+
+    fres = f_mount(&FatFs, "", 1); // 1 = mount now
+    fres = f_mount(&FatFs, "", 1); // 1 = mount now
+    if (fres != FR_OK)
+    {
+        #ifdef DEBUG
+  	  SSD1306_GotoXY (0,0);
+  	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
+  	  SSD1306_UpdateScreen(); //display
+        #endif
+  	  while(1);
+    }
+
+  //  #ifdef DEBUG
+  //  DWORD free_clusters, free_sectors, total_sectors;
+  //  FATFS* getFreeFs;
+  //  fres = f_getfree("", &free_clusters, &getFreeFs);
+  //  if (fres != FR_OK)
+  //  {
+  //	  SSD1306_GotoXY (0,0);
+  //	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
+  //	  SSD1306_UpdateScreen(); //display
+  //	  while(1);
+  //  }
+  //  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
+  //  free_sectors = free_clusters * getFreeFs->csize;
+  //  #endif
+
+    fres = f_open(&fil, filename, FA_READ);
+    fres = f_open(&fil, filename, FA_READ);
+    if (fres != FR_OK) {
+        #ifdef DEBUG
+  	  SSD1306_GotoXY (0,0);
+  	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
+  	  SSD1306_UpdateScreen();
+   	  #endif
+  	  while(1);
+    }
 
   /* USER CODE END 2 */
 
@@ -203,6 +261,46 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 7;
+  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -266,14 +364,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB0 */

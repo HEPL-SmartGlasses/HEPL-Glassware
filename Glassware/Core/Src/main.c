@@ -42,9 +42,6 @@
 #define SD_CS_GPIO_Port 'B'
 #define SD_CS_GPIO_Pin 0
 
-#define OLED_BAUD_RATE 9600
-#define OLED_ADDR 0x3C
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -123,76 +120,76 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // Initialize screen
-  enum menuState menu = dir;
-  SSD1306_Init();
-  SSD1306_GotoXY (0,0);
-  SSD1306_Puts ("HEPL", &Font_11x18, 1);
-  SSD1306_UpdateScreen(); //display
-  HAL_Delay(4000);
-
-  // Initialize SD card
-  // some variables for FatFs
-  FATFS FatFs; 	//Fatfs handle
-  FIL fil; 		//File handle
-  FRESULT fres; //Result after operations
-  string filename = "test.txt";
-
-  fres = f_mount(&FatFs, "", 1); // 1 = mount now
-  if (fres != FR_OK)
-  {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
-	  SSD1306_UpdateScreen(); //display
-      #endif
-	  while(1);
-  }
-
-  #ifdef DEBUG
-  DWORD free_clusters, free_sectors, total_sectors;
-  FATFS* getFreeFs;
-  fres = f_getfree("", &free_clusters, &getFreeFs);
-  if (fres != FR_OK)
-  {
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
-	  SSD1306_UpdateScreen(); //display
-	  while(1);
-  }
-  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-  free_sectors = free_clusters * getFreeFs->csize;
-  #endif
-
-  fres = f_open(&fil, filename, FA_READ);
-  if (fres != FR_OK) {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
-	  SSD1306_UpdateScreen();
- 	  #endif
-	  while(1);
-  }
-
-  BYTE readBuf[30];
-  TCHAR* rres = f_gets((TCHAR*)readBuf, 30, &fil);
-  if (rres == 0)
-  {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
-	  SSD1306_UpdateScreen();
-      #endif
-	  while(1);
-  }
-  f_close(&fil);
-  #ifdef DEBUG
-  SSD1306_GotoXY (0,0);
-  SSD1306_Puts(strcat("File: ", filename), &Font_11x18, 1);
-  SSD1306_GotoXY (11,0);
-  SSD1306_Puts(readBuf, &Font_11x18, 1);
-  SSD1306_UpdateScreen();
-  HAL_Delay(2000);
-  #endif
+//  enum menuState menu = dir;
+//  SSD1306_Init();
+//  SSD1306_GotoXY (0,0);
+//  SSD1306_Puts ("HEPL", &Font_11x18, 1);
+//  SSD1306_UpdateScreen(); //display
+//  HAL_Delay(4000);
+//
+//  // Initialize SD card
+//  // some variables for FatFs
+//  FATFS FatFs; 	//Fatfs handle
+//  FIL fil; 		//File handle
+//  FRESULT fres; //Result after operations
+//  string filename = "test.txt";
+//
+//  fres = f_mount(&FatFs, "", 1); // 1 = mount now
+//  if (fres != FR_OK)
+//  {
+//      #ifdef DEBUG
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
+//	  SSD1306_UpdateScreen(); //display
+//      #endif
+//	  while(1);
+//  }
+//
+//  #ifdef DEBUG
+//  DWORD free_clusters, free_sectors, total_sectors;
+//  FATFS* getFreeFs;
+//  fres = f_getfree("", &free_clusters, &getFreeFs);
+//  if (fres != FR_OK)
+//  {
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
+//	  SSD1306_UpdateScreen(); //display
+//	  while(1);
+//  }
+//  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
+//  free_sectors = free_clusters * getFreeFs->csize;
+//  #endif
+//
+//  fres = f_open(&fil, filename, FA_READ);
+//  if (fres != FR_OK) {
+//      #ifdef DEBUG
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
+//	  SSD1306_UpdateScreen();
+// 	  #endif
+//	  while(1);
+//  }
+//
+//  BYTE readBuf[30];
+//  TCHAR* rres = f_gets((TCHAR*)readBuf, 30, &fil);
+//  if (rres == 0)
+//  {
+//      #ifdef DEBUG
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
+//	  SSD1306_UpdateScreen();
+//      #endif
+//	  while(1);
+//  }
+//  f_close(&fil);
+//  #ifdef DEBUG
+//  SSD1306_GotoXY (0,0);
+//  SSD1306_Puts(strcat("File: ", filename), &Font_11x18, 1);
+//  SSD1306_GotoXY (11,0);
+//  SSD1306_Puts(readBuf, &Font_11x18, 1);
+//  SSD1306_UpdateScreen();
+//  HAL_Delay(2000);
+//  #endif
 
   /* USER CODE END 2 */
 
@@ -203,6 +200,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  SSD1306_Init();
+	  SSD1306_GotoXY (0,21);
+	  SSD1306_Puts ("HELLO WORLD :)", &Font_7x10, 1);
+	  SSD1306_UpdateScreen(); //display
+
+	  HAL_Delay (2000);
   }
   /* USER CODE END 3 */
 }
@@ -267,7 +270,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00000E14;
+  hi2c1.Init.Timing = 0x00000004;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
