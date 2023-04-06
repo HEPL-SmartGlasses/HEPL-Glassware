@@ -43,9 +43,6 @@
 #define SD_CS_GPIO_Port 'B'
 #define SD_CS_GPIO_Pin 0
 
-#define OLED_BAUD_RATE 9600
-#define OLED_ADDR 0x3C
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -335,6 +332,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  SSD1306_Init();
+	  SSD1306_GotoXY (0,21);
+	  SSD1306_Puts ("HELLO WORLD :)", &Font_7x10, 1);
+	  SSD1306_UpdateScreen(); //display
+
+	  HAL_Delay (2000);
   }
   /* USER CODE END 3 */
 }
@@ -399,7 +402,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00000E14;
+  hi2c1.Init.Timing = 0x00000004;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;

@@ -191,11 +191,11 @@ uint8_t SSD1306_Init(void) {
 	SSD1306_WRITECOMMAND(0xFF);
 	SSD1306_WRITECOMMAND(0xA1); //--set segment re-map 0 to 127
 	SSD1306_WRITECOMMAND(0xA6); //--set normal display
-	SSD1306_WRITECOMMAND(0xA8); //--set multiplex ratio(1 to 64)
-	SSD1306_WRITECOMMAND(0x3F); //
+	SSD1306_WRITECOMMAND(0xA8); //--set multiplex ratio(1:32)
+	SSD1306_WRITECOMMAND(0x1F); //
 	SSD1306_WRITECOMMAND(0xA4); //0xa4,Output follows RAM content;0xa5,Output ignores RAM content
 	SSD1306_WRITECOMMAND(0xD3); //-set display offset
-	SSD1306_WRITECOMMAND(0x00); //-not offset
+	SSD1306_WRITECOMMAND(0x00); //-no offset
 	SSD1306_WRITECOMMAND(0xD5); //--set display clock divide ratio/oscillator frequency
 	SSD1306_WRITECOMMAND(0xF0); //--set divide ratio
 	SSD1306_WRITECOMMAND(0xD9); //--set pre-charge period
