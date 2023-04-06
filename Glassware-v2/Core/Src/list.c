@@ -1,9 +1,11 @@
+#include "list.h"
+
 List* createList(){
     List* list = (List*) malloc(sizeof(List));
 
-    List->val = NULL;
-    List->next = NULL;
-    List->prev = NULL;
+    list->val = NULL;
+    list->next = NULL;
+    list->prev = NULL;
 
     return list;
 }
@@ -24,9 +26,14 @@ Entry* createEntry(int index, int q, int parent){
 
 List* addList(List * l, Entry* elem){
 	// if it is empty
-	if (isEmptyList(l->val)){
-		l->val = elem;
-		return;
+	if (isEmptyList(l)){
+
+		List * newList = malloc(sizeof(List));
+		newList->next = NULL;
+		newList->prev = NULL;
+		newList->val = elem;
+
+		return newList;
 	}
 
 	// otherwise traverse
@@ -34,7 +41,7 @@ List* addList(List * l, Entry* elem){
 	List*next = l->next;
 
 	while(!isEmptyList(next)){
-		List* prev = next;
+		prev = next;
 		next = next->next;
 	}
 
@@ -50,7 +57,7 @@ List* addList(List * l, Entry* elem){
 
 List* removeList(List * l, int index){
 	// if it is empty
-	if (isEmptyList(l->val)){
+	if (isEmptyList(l)){
 		return NULL;
 	}
 
@@ -69,7 +76,7 @@ List* removeList(List * l, int index){
 
 	for(int i = 0; i < index - 1; i++){
 		if (!isEmptyList(next)) {
-			List* prev = next;
+			prev = next;
 			next = next->next;
 		} else {
 			return NULL;

@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
 typedef struct Entry {
 	int index;
 	int q;
@@ -6,16 +10,16 @@ typedef struct Entry {
 
 typedef struct List {
 	Entry* val;
-	List* next;
-	List* prev;
+	struct List* next;
+	struct List* prev;
 } List;
 
 List* createList();
 
 Entry* createEntry();
 
-void addList(List * l, Entry elem);
+List* addList(List * l, Entry* elem);
 
-void removeList(List * l, int index);
+List* removeList(List * l, int index);
 
 bool isEmptyList(List* l);

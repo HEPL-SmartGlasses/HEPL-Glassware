@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "fatfs.h"
+#include "path.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -59,6 +60,11 @@ SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN PV */
 enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
+enum selectedLocation {eecs1311 = 0, wbathroom, mbathroom, vending, stairs};
+enum menuState menu;
+enum selectedLocation location;
+uint16_t ** map; // map storage
+Graph * graph;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,7 +81,72 @@ static void MX_SPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int Map_init_SD(){
+	// open map file from sd card
 
+	// Initialize SD card
+	// some variables for FatFs
+	FATFS FatFs; 	//Fatfs handle
+	FIL fil; 		//File handle
+    char line[100]; // Line buffer
+	FRESULT fres;   //Result after operations
+	char* filename = "map.txt";
+
+	f_mount(&FatFs, "", 1); // 1 = mount now
+
+	fres = f_open(&fil, filename, FA_READ);
+    if (fres) return (int)fres;
+
+    int count = 0;
+    while (f_gets(line, sizeof line, &fil)) {
+    	count++;
+    }
+
+    /* Close the file */
+    f_close(&fil);
+
+    map = malloc(count * sizeof(uint16_t *));
+	for (int i = 0; i < count; i++){
+		// allocate x/y coordinates
+		map[i] = malloc( 4 * sizeof(uint16_t));
+	}
+
+    // Reopen file and read content
+	fres = f_open(&fil, filename, FA_READ);
+    if (fres) return (int)fres;
+
+    /* Read every line and display it */
+    char * token;
+    const char* del = " ";
+
+    int i = 0;
+    while (f_gets(line, sizeof line, &fil)) {
+    	int j = 0;
+        // printf(line);
+        token = strtok(line, del);
+        int num = atoi(token);
+        map[i][j] = num;
+
+        while(token != NULL){
+        	if (j > 3){ // file is badly formatted
+        		return 1;
+        	}
+        	j++;
+        	token = strtok(NULL, del);
+        	num = atoi(token);
+        	map[i][j] = num;
+        }
+        i++;
+    }
+
+    /* Close the file */
+    f_close(&fil);
+
+    buildGraphFromMap(graph, map, count);
+
+    return 0;
+
+}
 /* USER CODE END 0 */
 
 /**
@@ -94,7 +165,8 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  graph = createGraph();
+  Map_init_SD();
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -115,7 +187,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // Initialize screen
-  enum menuState menu = dir;
+  menu = dir;
   SSD1306_Init();
 
   //DRESULT temp = SD_disk_initialize(0);

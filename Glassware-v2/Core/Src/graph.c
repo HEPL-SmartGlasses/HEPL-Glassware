@@ -1,3 +1,5 @@
+#include "graph.h"
+
 Graph* createGraph() {
     Graph* graph = (Graph*) malloc(sizeof(Graph));
     graph->numNodes = 0;
@@ -46,7 +48,7 @@ void addNode(Graph* graph, int x, int y) {
 }
 
 void addEdge(Graph* graph, int elemL, int elemR) {
-    if (nodeExists(graph, x, y)) {
+    if (edgeExists(graph, elemL, elemR)) {
         // printf("Node already exists in graph.\n");
         return;
     }
@@ -70,6 +72,8 @@ int findNode(Graph* graph, int x, int y) {
             return i;
         }
     }
+
+    return -1;
 }
 
 void buildGraphFromMap(Graph* graph, uint16_t ** map, size_t map_size){
@@ -92,8 +96,4 @@ void buildGraphFromMap(Graph* graph, uint16_t ** map, size_t map_size){
 	}
 
 	return;
-}
-
-uint16_t * findShortestPath(Graph* graph, uint16_t startIdx, uint16_t destinationIdx){
-
 }

@@ -1,3 +1,7 @@
+#include "path.h"
+#include <limits.h>
+#include <math.h>
+
 Entry* findLeastF(List *l){
 	int f = INT_MAX;
 	int i = 0;
@@ -35,6 +39,8 @@ List* getSucc(Entry* q, Graph* graph){
 				addList(succ, createEntry(idx1, q->index, 0));
 			}
 		}
+
+		return succ;
 }
 
 double distance(int idx1, int idx2, Graph * graph){
@@ -90,7 +96,7 @@ int getListSize(List * l){
 }
 
 int * flipList2array(List * path, List * pathEnd){
-	int size = getListSze(path);
+	int size = getListSize(path);
 
 	int* arr = malloc(size * sizeof(int));
 
@@ -104,7 +110,7 @@ int * flipList2array(List * path, List * pathEnd){
 	return arr;
 }
 
-int*  backtrack(List * closed, List* closedEnd){
+int* backtrack(List * closed, List* closedEnd){
     List * path = createList();
     List * pathEnd = path;
 
@@ -119,7 +125,7 @@ int*  backtrack(List * closed, List* closedEnd){
     	int nodeIdx = entry->index;
 
     	if (parent == nodeIdx) {
-    		pathEnd = addList(path, createNetry(nodeIdx, 0, 0));
+    		pathEnd = addList(path, createEntry(nodeIdx, 0, 0));
     		parent = entry->parent;
     	} else {
     		continue;
@@ -133,12 +139,14 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 // A* Search Algorithm
 
 //	1.  Initialize the open list
-	List * open;
+	List * open = createList();;
 
 //	2.  Initialize the closed list
 //	    put the starting node on the open
 //	    list (you can leave its f at zero)
-	List * closed;
+	List * closed = createList();
+	List * closedEnd = closed;
+
 	Entry* entry = createEntry(startIdx, 0, 0);
 	addList(closed, entry);
 
@@ -156,18 +164,20 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 			List * succ_copy = succ;
 			while (succ_copy != NULL){
 
-				if (succ_copy->val->index == destinationIdx){
+				int succIdx = succ_copy->val->index;
+
+				if (succIdx == destinationIdx){
 					// if successor is the goal, stop search
-					addList(closed, q);
-					addList(closed, createEntry(succ_copy->val->index, q->q, q->index))
-					return backtrack(closed);
+					closedEnd = addList(closed, q);
+					closedEnd = addList(closed, createEntry(succIdx, q->q, q->index));
+					return backtrack(closed, closedEnd);
 				} else {
 					// else, compute both g and h for successor
-					double g = q->q + distance(q->index, succ_copy->val->index, graph);
-					double h = distance(destinationIdx, succ_copy->val->index, graph);
+					double g = q->q + distance(q->index, succIdx, graph);
+					double h = distance(destinationIdx, succIdx, graph);
 					double f = g + h;
 
-					succ_copy->val->g = f;
+					succ_copy->val->q = f;
 
 					// iii) if a node with the same position as
 					// successor is in the OPEN list which has a
@@ -183,14 +193,14 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 		            if(findFList(closed, succIdx, f)){
 		            	continue;
 		            }
-		            addList(open, createEntry(succ_copy->val->index, f, q->index));
+		            addList(open, createEntry(succIdx, f, q->index));
 
 				}
 				// push q on the closed list
-				addList(closed, q);
+				closedEnd = addList(closed, q);
 				// iterate
 				succ_copy = succ_copy->next;
 			}
-			return backtrack(closed);
 	}
+	return backtrack(closed, closedEnd);
 }
