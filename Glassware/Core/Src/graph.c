@@ -93,3 +93,7 @@ void buildGraphFromMap(Graph* graph, uint16_t ** map, size_t map_size){
 
 	return;
 }
+
+uint16_t * findShortestPath(Graph* graph, uint16_t startIdx, uint16_t destinationIdx){
+
+}

@@ -26,6 +26,7 @@
 #include "fonts.h"
 #include "fatfs_sd.h"
 #include <string.h>
+#include "graph.h"
 
 /* USER CODE END Includes */
 
@@ -72,6 +73,7 @@ uint16_t numLocations = 5; // number of supported locations
 uint16_t polygonSize = 4;  // standard polygon coordinates number
 uint16_t *** map = malloc(numLocations * sizeof(uint16_t **)); // map storage
 uint16_t polygonsRequired[5] = {1, 2, 1, 1, 1}; // buildings required polygon number
+Graph * graph;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,6 +91,72 @@ static void MX_SPI1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int Map_init_SD(){
+	// open map file from sd card
+
+	// Initialize SD card
+	// some variables for FatFs
+	FATFS FatFs; 	//Fatfs handle
+	FIL fil; 		//File handle
+    char line[100]; /* Line buffer */
+	FRESULT fres; //Result after operations
+	string filename = "map.txt";
+
+	f_mount(&FatFs, "", 1); // 1 = mount now
+
+	fres = f_open(&fil, filename, FA_READ);
+    if (fr) return (int)fr;
+
+    int count = 0;
+    while (f_gets(line, sizeof line, &fil)) {
+    	count++;
+    }
+
+    /* Close the file */
+    f_close(&fil);
+
+	for (size_t i = 0; i < count){
+		// allocate x/y coordinates
+		map[i] = malloc( 4 * sizeof(uint16_t *));
+	}
+
+    // Reopen file and read content
+	fres = f_open(&fil, filename, FA_READ);
+    if (fr) return (int)fr;
+
+    /* Read every line and display it */
+    char * token;
+    const char del = " ";
+
+    int i = 0;
+    while (f_gets(line, sizeof line, &fil)) {
+    	int j = 0;
+        // printf(line);
+        token = strtok(line, del);
+        int num = atoi(token);
+        map[i][j] = num;
+
+        while(token != NULL){
+        	if (j > 3){ // file is badly formatted
+        		return 1;
+        	}
+        	j++;
+        	token = strtok(NULL, del);
+        	num = atoi(token);
+        	map[i][j] = num;
+        }
+        i++;
+    }
+
+    /* Close the file */
+    f_close(&fil);
+
+    buildGraphFromMap(graph, map, count);
+
+    return 0;
+
+}
+
 void Map_init() {
 	// allocate location storage
 	// coordinates are acceses by map[loc][axis][polygonNum]
@@ -164,6 +232,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+  graph = createGraph();
   Map_init();
   /* USER CODE END Init */
 
@@ -198,7 +267,7 @@ int main(void)
   FATFS FatFs; 	//Fatfs handle
   FIL fil; 		//File handle
   FRESULT fres; //Result after operations
-  string filename = "test.txt";
+  string filename = "map.txt";
 
   fres = f_mount(&FatFs, "", 1); // 1 = mount now
   if (fres != FR_OK)
