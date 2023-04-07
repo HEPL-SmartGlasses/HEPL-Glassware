@@ -79,10 +79,10 @@ int findNode(Graph* graph, double x, double y) {
 void buildGraphFromMap(Graph* graph, double ** map, int map_size){
 
 	for (int i = 0; i < map_size; i++){
-		 double x1 = map[i][1];
-		 double y1 = map[i][2];
-		 double x2 = map[i][3];
-		 double y2 = map[i][4];
+		 double x1 = map[i][0];
+		 double y1 = map[i][1];
+		 double x2 = map[i][2];
+		 double y2 = map[i][3];
 
 		 // add nodes
 		 addNode(graph, x1, y1);

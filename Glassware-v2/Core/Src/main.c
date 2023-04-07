@@ -20,6 +20,7 @@
 #include "main.h"
 #include "fatfs.h"
 #include "path.h"
+#include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -60,11 +61,14 @@ SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN PV */
 enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
-enum selectedLocation {eecs1311 = 0, wbathroom, mbathroom, vending, stairs};
+enum selectedLocation {eecs1311 = 0, wbathroom, mbathroom, vending, stairs, none};
 enum menuState menu;
-enum selectedLocation location;
-double ** map; // map storage
-Graph * graph;
+enum selectedLocation location = none;
+double ** map;     // map storage
+double ** destMap; // map storage
+Graph * graph; // storage for shortest path algorithm
+double curPosX;
+double curPosY;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -81,6 +85,60 @@ static void MX_SPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+bool hasArrived(){
+	// check if current position is close to the destination
+	return true;
+}
+
+double computeNextStep(){
+	// find shortest path from current position to destination
+	// find immediate route for user
+	// compute arrow heading (based on user orientation)
+	return 0;
+}
+
+void getCurrentPosition(){
+// request data from Foot Board
+	curPosX = destMap[0][0];
+	curPosY = destMap[0][1];
+	return;
+}
+
+void displayArrow(double theta){
+	  SSD1306_GotoXY (0,0);
+	  SSD1306_DrawArrow(1, 1, theta, 0);
+	  SSD1306_UpdateScreen(); //display
+}
+
+void Destination_init(){
+	int locNum = 5;
+    destMap = malloc(locNum * sizeof(double *));
+	for (int i = 0; i < locNum; i++){
+		// allocate x/y coordinates
+		destMap[i] = malloc( 2 * sizeof(double));
+	}
+
+	// eecs 1311
+	destMap[0][0] = 16.96;
+	destMap[0][1] = 78.64;
+
+	// womem's bathroom
+	destMap[1][0] = 41.12;
+	destMap[1][1] = 82.48;
+
+	// men's bathroom
+	destMap[0][0] = 48.48;
+	destMap[0][1] = 82.80;
+
+	// vending machine
+	destMap[0][0] = 39.36;
+	destMap[0][1] = 62.48;
+
+	// stairs
+	destMap[0][0] = 48.32;
+	destMap[0][1] = 78.48;
+}
+
 int Map_init_SD(){
 	// open map file from sd card
 
@@ -192,78 +250,78 @@ int main(void)
   menu = dir;
   SSD1306_Init();
 
-  //DRESULT temp = SD_disk_initialize(0);
-
-  // Initialize SD card
-  // some variables for FatFs
-  FATFS FatFs; 	//Fatfs handle
-  FIL fil; 		//File handle
-  FRESULT fres; //Result after operations
-  char* filename = "map.txt";
-
-
-//  uint8_t buf_tx[1] = {0xFF};
-//  uint8_t buf_rx[1] = {0x00};
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
-//  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
-
-  fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
-  if (fres != FR_OK)
-  {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
-	  SSD1306_UpdateScreen(); //display
-      #endif
-//	  while(1);
-  }
-
-  #ifdef DEBUG
-  DWORD free_clusters, free_sectors, total_sectors;
-  FATFS* getFreeFs;
-  fres = f_getfree("", &free_clusters, &getFreeFs);
-  if (fres != FR_OK)
-  {
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
-	  SSD1306_UpdateScreen(); //display
-//	  while(1);
-  }
-  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-  free_sectors = free_clusters * getFreeFs->csize;
-  #endif
-
-  fres = f_open(&fil, filename, FA_READ);
-  if (fres != FR_OK) {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
-	  SSD1306_UpdateScreen();
- 	  #endif
-//	  while(1);
-  }
-
-  BYTE readBuf[50];
-  TCHAR* rres = f_gets((TCHAR*)readBuf, 50, &fil);
-  if (rres == 0)
-  {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
-	  SSD1306_UpdateScreen();
-      #endif
-//	  while(1);
-  }
-  f_close(&fil);
-  #ifdef DEBUG
-  SSD1306_GotoXY (0,0);
-  SSD1306_Puts(strcat("File: ", filename), &Font_11x18, 1);
-  SSD1306_GotoXY (11,0);
-  SSD1306_Puts(readBuf, &Font_11x18, 1);
-  SSD1306_UpdateScreen();
-  HAL_Delay(2000);
-  #endif
+//  //DRESULT temp = SD_disk_initialize(0);
+//
+//  // Initialize SD card
+//  // some variables for FatFs
+//  FATFS FatFs; 	//Fatfs handle
+//  FIL fil; 		//File handle
+//  FRESULT fres; //Result after operations
+//  char* filename = "map.txt";
+//
+//
+////  uint8_t buf_tx[1] = {0xFF};
+////  uint8_t buf_rx[1] = {0x00};
+////  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
+////  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
+////  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
+//
+//  fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
+//  if (fres != FR_OK)
+//  {
+//      #ifdef DEBUG
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
+//	  SSD1306_UpdateScreen(); //display
+//      #endif
+////	  while(1);
+//  }
+//
+//  #ifdef DEBUG
+//  DWORD free_clusters, free_sectors, total_sectors;
+//  FATFS* getFreeFs;
+//  fres = f_getfree("", &free_clusters, &getFreeFs);
+//  if (fres != FR_OK)
+//  {
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
+//	  SSD1306_UpdateScreen(); //display
+////	  while(1);
+//  }
+//  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
+//  free_sectors = free_clusters * getFreeFs->csize;
+//  #endif
+//
+//  fres = f_open(&fil, filename, FA_READ);
+//  if (fres != FR_OK) {
+//      #ifdef DEBUG
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
+//	  SSD1306_UpdateScreen();
+// 	  #endif
+////	  while(1);
+//  }
+//
+//  BYTE readBuf[50];
+//  TCHAR* rres = f_gets((TCHAR*)readBuf, 50, &fil);
+//  if (rres == 0)
+//  {
+//      #ifdef DEBUG
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
+//	  SSD1306_UpdateScreen();
+//      #endif
+////	  while(1);
+//  }
+//  f_close(&fil);
+//  #ifdef DEBUG
+//  SSD1306_GotoXY (0,0);
+//  SSD1306_Puts(strcat("File: ", filename), &Font_11x18, 1);
+//  SSD1306_GotoXY (11,0);
+//  SSD1306_Puts(readBuf, &Font_11x18, 1);
+//  SSD1306_UpdateScreen();
+//  HAL_Delay(2000);
+//  #endif
 
   /* USER CODE END 2 */
 
@@ -274,11 +332,26 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  SSD1306_GotoXY (0,21);
-	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
-	  SSD1306_UpdateScreen(); //display
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
+//	  SSD1306_UpdateScreen(); //display
+//
+//	  HAL_Delay (2000);
+	   if (location == none){
+		   // UI
+		   // set up interrupts for buttons
+		   location = wbathroom;
+	   } else {
+		   getCurrentPosition(); // find user position
+		   double heading = computeNextStep();
+		   displayArrow(heading);
+		   HAL_Delay (2000);
 
-	  HAL_Delay (2000);
+		   if (hasArrived()){
+			 location = none;
+			 // display congrats message
+		   }
+	   }
   }
   /* USER CODE END 3 */
 }
