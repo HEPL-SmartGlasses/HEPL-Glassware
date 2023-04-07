@@ -57,6 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define XBEE_CS_Pin GPIO_PIN_3
+#define XBEE_CS_GPIO_Port GPIOA
+#define XBEE_ATTN_Pin GPIO_PIN_5
+#define XBEE_ATTN_GPIO_Port GPIOC
 
 /* USER CODE BEGIN Private defines */
 

@@ -25,6 +25,7 @@
 #include "ssd1306.h"
 #include "fonts.h"
 
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -34,6 +35,14 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define GLASSBEE_ADDR 0x0013A2004176EAC6
+#define FOOTBEE_ADDR 0x0013A2004108245C
+#define XBEE_SRC_ADDR GLASSBEE_ADDR
+#define XBEE_DEST_ADDR FOOTBEE_ADDR
+#define XBEE_START 0x7E
+#define XBEE_TRANSMIT_FRAME 0x10
+#define XBEE_RECEIVE_FRAME 0x90
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -61,6 +70,67 @@ static void MX_SPI1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+// returns frame size
+// modifies frame[]. pass payload to be sent in data[].
+uint8_t XBeeChecksum(uint8_t frame[], uint8_t frame_size)
+{
+	uint8_t checksum = 0;
+	uint8_t ret = 0;
+	for (int i = 0; i < frame_size; i++) // skip bytes 0-2, and last
+	{
+		uint8_t temp = frame[i+3];
+		checksum += temp;
+	}
+	checksum = 0x00FF - checksum;
+	ret = (uint8_t)(checksum & 0x00FF);
+	return ret;
+}
+
+uint8_t makeXBeeFrame
+(
+		uint8_t frame_type,
+		uint8_t frame_id,
+		uint8_t data_size, // in bytes
+		uint8_t data[],
+		uint8_t frame[]
+)
+{
+	// only do 14 bytes of data to avoid exceeding 32-byte frame size
+	if (data_size > 14) { data_size = 14; }
+
+	uint16_t frame_size = 0x0E + data_size;
+	uint32_t checksum = 0;
+
+	frame[0] = XBEE_START;
+	frame[1] = ((frame_size) >> 8) & 0x00FF; // length upper byte
+	frame[2] = ((frame_size) >> 0) & 0x00FF; // length lower byte
+	frame[3] = frame_type;
+	frame[4] = frame_id;
+	for (int i = 0; i < 8; i++) // write 64-bit dest
+	{
+		uint8_t temp = (XBEE_DEST_ADDR >> 8*(7-i));
+		frame[i + 5] = temp;
+	}
+	frame[13] = 0xFF; // 16-bit addr upper
+	frame[14] = 0xFE; // 16-bit addr lower
+	frame[15] = 0x00; // broadcast_radius
+	frame[16] = 0x00; // options
+	for (int i = 0; i < data_size; i++) // add data payload to frame
+	{
+		uint8_t temp = data[i];
+		frame[i + 17] = temp;
+	}
+
+	// update checksum
+	checksum = XBeeChecksum(frame, frame_size);
+	frame[data_size + 17] = checksum;
+	return frame_size + 4;
+}
+
+void parseXBeeFrame (uint8_t* frame[])
+{
+}
 
 /* USER CODE END 0 */
 
@@ -97,57 +167,18 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
-  // Initialize SD card
-    // some variables for FatFs
-    FATFS FatFs; 	//Fatfs handle
-    FIL fil; 		//File handle
-    FRESULT fres; //Result after operations
-    char* filename = "/map.txt";
+  uint8_t data_buf[14];
+  uint8_t xbee_tx_buf[32];
+  uint8_t xbee_rx_buf[32];
 
-
-  //  uint8_t buf_tx[1] = {0xFF};
-  //  uint8_t buf_rx[1] = {0x00};
-  //  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
-  //  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
-  //  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
-
-    fres = f_mount(&FatFs, "", 1); // 1 = mount now
-    fres = f_mount(&FatFs, "", 1); // 1 = mount now
-    if (fres != FR_OK)
-    {
-        #ifdef DEBUG
-  	  SSD1306_GotoXY (0,0);
-  	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
-  	  SSD1306_UpdateScreen(); //display
-        #endif
-  	  while(1);
-    }
-
-  //  #ifdef DEBUG
-  //  DWORD free_clusters, free_sectors, total_sectors;
-  //  FATFS* getFreeFs;
-  //  fres = f_getfree("", &free_clusters, &getFreeFs);
-  //  if (fres != FR_OK)
-  //  {
-  //	  SSD1306_GotoXY (0,0);
-  //	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
-  //	  SSD1306_UpdateScreen(); //display
-  //	  while(1);
-  //  }
-  //  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-  //  free_sectors = free_clusters * getFreeFs->csize;
-  //  #endif
-
-    fres = f_open(&fil, filename, FA_READ);
-    fres = f_open(&fil, filename, FA_READ);
-    if (fres != FR_OK) {
-        #ifdef DEBUG
-  	  SSD1306_GotoXY (0,0);
-  	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
-  	  SSD1306_UpdateScreen();
-   	  #endif
-  	  while(1);
-    }
+  data_buf[0] = 1;
+  data_buf[1] = 3;
+  data_buf[2] = 9;
+  data_buf[3] = 12;
+  uint8_t tx_size = makeXBeeFrame(XBEE_TRANSMIT_FRAME, 0x01, 4, data_buf, xbee_tx_buf);
+  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
+  HAL_SPI_TransmitReceive(&hspi1, xbee_tx_buf, xbee_rx_buf, tx_size, 10);
+  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
 
   /* USER CODE END 2 */
 
@@ -320,6 +351,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOG_CLK_ENABLE();
   HAL_PWREx_EnableVddIO2();
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(XBEE_CS_GPIO_Port, XBEE_CS_Pin, GPIO_PIN_SET);
+
   /*Configure GPIO pins : PE2 PE3 */
   GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -345,9 +379,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PC0 PC1 PC2 PC3
-                           PC4 PC5 */
+                           PC4 */
   GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
-                          |GPIO_PIN_4|GPIO_PIN_5;
+                          |GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
@@ -360,11 +394,24 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF1_TIM2;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA1 PA3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_3;
+  /*Configure GPIO pin : PA1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG_ADC_CONTROL;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : XBEE_CS_Pin */
+  GPIO_InitStruct.Pin = XBEE_CS_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(XBEE_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : XBEE_ATTN_Pin */
+  GPIO_InitStruct.Pin = XBEE_ATTN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(XBEE_ATTN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB0 */
   GPIO_InitStruct.Pin = GPIO_PIN_0;
