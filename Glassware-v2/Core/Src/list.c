@@ -3,20 +3,19 @@
 List* createList(){
     List* list = (List*) malloc(sizeof(List));
 
-    list->val = NULL;
-    list->next = NULL;
-    list->prev = NULL;
+    list->head = NULL;
+    list->tail = NULL;
 
     return list;
 }
 
 // List destroyer
 
-Entry* createEntry(int index, int q, int parent){
+Entry* createEntry(int index, double f, int parent){
 	Entry* entry = (Entry *) malloc(sizeof(Entry));
 
 	entry->index = index;
-	entry->q = q;
+	entry->f = f;
 	entry->parent = parent;
 
 	return entry;
@@ -24,81 +23,93 @@ Entry* createEntry(int index, int q, int parent){
 
 // entry destroyer
 
-List* addList(List * l, Entry* elem){
-	// if it is empty
-	if (isEmptyList(l)){
+void addList(List * list, Entry* elem){
+    NodeList* new_node = (NodeList*) malloc(sizeof(NodeList));
+    new_node->val = elem;
+    new_node->next = NULL;
 
-		List * newList = malloc(sizeof(List));
-		newList->next = NULL;
-		newList->prev = NULL;
-		newList->val = elem;
-
-		return newList;
-	}
-
-	// otherwise traverse
-	List* prev = l;
-	List*next = l->next;
-
-	while(!isEmptyList(next)){
-		prev = next;
-		next = next->next;
-	}
-
-	List * newList = malloc(sizeof(List));
-	newList->next = NULL;
-	newList->prev = prev;
-	newList->val = elem;
-
-	prev->next = newList;
-
-	return newList;
+    if (list->head == NULL) {
+        // The list is empty, so make the new node both the head and tail.
+        new_node->prev = NULL;
+        list->head = new_node;
+        list->tail = new_node;
+    } else {
+        // Add the new node to the end of the list.
+        new_node->prev = list->tail;
+        list->tail->next = new_node;
+        list->tail = new_node;
+    }
+    return;
 }
 
-List* removeList(List * l, int index){
+void removeList(List * list, int index){
 	// if it is empty
-	if (isEmptyList(l)){
-		return NULL;
+	if (list->head == NULL || index < 0){
+		return;
 	}
 
-	// else index = 0
 	if (index == 0) {
-		List * temp = l;
-		l = l->next;
+		NodeList * old_head = list->head;
+		list->head = old_head->next;
+		if (list->head != NULL){
+			list->head->prev = NULL;
+		} else {
+			list->tail = NULL;
+		}
 
-		free(temp);
-		return NULL;
+		free(old_head->val);
+		free(old_head);
+
+		return;
 	}
 
 	// otherwise traverse
-	List* prev = l;
-	List*next = l->next;
-
-	for(int i = 0; i < index - 1; i++){
-		if (!isEmptyList(next)) {
-			prev = next;
-			next = next->next;
-		} else {
-			return NULL;
-		}
+	NodeList * current = list->head;
+	int i = 0;
+	while (i < index && current != NULL){
+		current = current->next;
+		i++;
 	}
 
-	prev->next = next->next;
-	next->prev = prev;
-	// free memory
-	free(next);
+    // If the index is out of bounds, return without doing anything.
+    if (current == NULL) {
+        return;
+    }
 
-	if (next->next != NULL){
-		return NULL;
+	current->prev->next = current->next;
+	if (current->next != NULL){
+		current->next->prev = current->prev;
 	} else {
-		return prev;
+		list->tail = current->prev;
 	}
+
+	// free memory
+	free(current->val);
+	free(current);
+
+	return;
 }
 
-bool isEmptyList(List* l){
-	if (l == NULL){
-		return true;
+bool isEmptyList(List* list){
+	return list->head == NULL;
+}
+
+int getListSize(List * list){
+	int count = 0;
+	NodeList* current = list->head;
+
+	while (current != NULL){
+		current = current->next;
+		count++;
+	}
+
+	return count;
+}
+
+Entry * getLastElem(List * list){
+	if (list->tail == NULL){
+		return NULL;
 	} else {
-		return false;
+		return list->tail->val;
 	}
 }

@@ -91,10 +91,17 @@ bool hasArrived(){
 }
 
 double computeNextStep(){
+
+	int startIdx = findNode(graph, curPosX, curPosY);
+	int destinationIdx = findNode(graph, destMap[location][0], destMap[location][1]);
+
 	// find shortest path from current position to destination
+	int * path = findShortestPath(graph, startIdx, destinationIdx);
+
 	// find immediate route for user
 	// compute arrow heading (based on user orientation)
-	return 0;
+	double theta = heading(graph, path);
+	return theta;
 }
 
 void getCurrentPosition(){
@@ -245,6 +252,7 @@ int main(void)
 
   graph = createGraph();
   Map_init_SD();
+  Destination_init();
 
   // Initialize screen
   menu = dir;
@@ -332,9 +340,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  SSD1306_GotoXY (0,0);
-//	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
-//	  SSD1306_UpdateScreen(); //display
+	  SSD1306_GotoXY (0,0);
+	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
+	  SSD1306_UpdateScreen(); //display
 //
 //	  HAL_Delay (2000);
 	   if (location == none){

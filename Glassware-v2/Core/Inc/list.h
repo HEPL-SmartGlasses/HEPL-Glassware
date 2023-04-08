@@ -4,22 +4,31 @@
 
 typedef struct Entry {
 	int index;
-	int q;
+	double f;
 	int parent;
 } Entry;
 
-typedef struct List {
+typedef struct NodeList {
 	Entry* val;
-	struct List* next;
-	struct List* prev;
+	struct NodeList* next;
+	struct NodeList* prev;
+} NodeList;
+
+typedef struct List {
+	NodeList *head;
+	NodeList *tail;
 } List;
 
 List* createList();
 
 Entry* createEntry();
 
-List* addList(List * l, Entry* elem);
+void addList(List * l, Entry* elem);
 
-List* removeList(List * l, int index);
+void removeList(List * l, int index);
 
 bool isEmptyList(List* l);
+
+int getListSize(List * l);
+
+Entry * getLastElem(List * list);
