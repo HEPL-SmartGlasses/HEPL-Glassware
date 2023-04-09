@@ -74,13 +74,15 @@ bool findFList(List * open, int idx, double f){
 int * flipList2array(List * path){
 	int size = getListSize(path);
 
-	int* arr = malloc(size * sizeof(int));
+	int* arr = malloc((size + 1) * sizeof(int));
 
 	NodeList* end = path->tail;
 
+	arr[0] = size; // store array size on first element
+
 	int i = 0;
 	while (end != NULL){
-		arr[i] = end->val->index;
+		arr[i + 1] = end->val->index;
 		end = end->prev;
 		i++;
 	}
@@ -90,23 +92,32 @@ int * flipList2array(List * path){
 
 double heading(Graph* graph, int * path){
 	// TODO: edge cases for safe array access
-	int cur = path[0];
-	int next = path[1];
+	int pathSize = path[0];
 
-	double curX = graph->nodes[cur]->x;
-	double curY = graph->nodes[cur]->y;
-
-	double nextX = graph->nodes[next]->x;
-	double nextY = graph->nodes[next]->y;
-
-	double dot = nextX - curX;
-	double norm = sqrt( pow(nextX - curX, 2) + pow(nextY - curY, 2));
-	double theta = acos(dot/norm);
-
-	if ( (nextY - curY) >= 0) {
-		return theta;
+	if (pathSize == 0) {
+		// error
+	} else if (pathSize == 1) {
+		// currently on destination
+		// error
 	} else {
-		return 2 * M_PI - theta;
+		int cur = path[1];
+		int next = path[2];
+
+		double curX = graph->nodes[cur]->x;
+		double curY = graph->nodes[cur]->y;
+
+		double nextX = graph->nodes[next]->x;
+		double nextY = graph->nodes[next]->y;
+
+		double dot = nextX - curX;
+		double norm = sqrt( pow(nextX - curX, 2) + pow(nextY - curY, 2));
+		double theta = acos(dot/norm);
+
+		if ( (nextY - curY) >= 0) {
+			return theta;
+		} else {
+			return 2 * M_PI - theta;
+		}
 	}
 
 }

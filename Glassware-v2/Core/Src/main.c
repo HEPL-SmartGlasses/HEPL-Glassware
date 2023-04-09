@@ -92,6 +92,7 @@ bool hasArrived(){
 
 double computeNextStep(){
 
+	// TODO: convert from current position to closest node
 	int startIdx = findNode(graph, curPosX, curPosY);
 	int destinationIdx = findNode(graph, destMap[location][0], destMap[location][1]);
 
@@ -111,10 +112,48 @@ void getCurrentPosition(){
 	return;
 }
 
-void displayArrow(double theta){
+void displayArrow(int direction){
 	  SSD1306_GotoXY (0,0);
-	  SSD1306_DrawArrow(1, 1, theta, 0);
+
+	  if (direction == 0) {
+		  displayArrowRight();
+	  } else if (direction == 1) {
+		  displayArrowLeft();
+	  } else if (direction == 2) {
+		  displayArrowUp();
+	  } else if (direction == 3) {
+		  displayArrowDown();
+	  } else {
+		  // error
+	  }
+
 	  SSD1306_UpdateScreen(); //display
+}
+
+void displayArrowRight(){
+	  // Turn Right
+	  SSD1306_Puts ("Right", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(120, 15, 100, 30, 100, 0, SSD1306_COLOR_WHITE);
+	  SSD1306_DrawFilledRectangle(80, 10, 20, 10, SSD1306_COLOR_WHITE);
+}
+
+void displayArrowLeft(){
+	  // Turn Left
+	  SSD1306_Puts ("Left", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(80, 15, 100, 30, 100, 0, SSD1306_COLOR_WHITE);
+	  SSD1306_DrawFilledRectangle(100, 10, 20, 10, SSD1306_COLOR_WHITE);
+}
+
+void displayArrowUp(){
+	  // Move forward
+	  SSD1306_Puts ("Move", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(80, 0, 100, 30, 60, 30, SSD1306_COLOR_WHITE);
+}
+
+void displayArrowDown(){
+	  // Turn back
+	  SSD1306_Puts ("Back", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(80, 30, 100, 0, 60, 0, SSD1306_COLOR_WHITE);
 }
 
 void Destination_init(){
@@ -340,17 +379,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
-	  SSD1306_UpdateScreen(); //display
-//
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
+//	  SSD1306_UpdateScreen(); //display
 //	  HAL_Delay (2000);
+
 	   if (location == none){
 		   // UI
 		   // set up interrupts for buttons
 		   location = wbathroom;
 	   } else {
 		   getCurrentPosition(); // find user position
+		   // TODO: convert from position to orientation
+		   // TODO: figure out if needed to turn back
+		   // TODO:: then convert from heading to arrow
 		   double heading = computeNextStep();
 		   displayArrow(heading);
 		   HAL_Delay (2000);
