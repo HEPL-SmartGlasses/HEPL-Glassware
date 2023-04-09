@@ -90,7 +90,7 @@ bool hasArrived(){
 	return true;
 }
 
-double computeNextStep(){
+void displayNextStep(){
 
 	// TODO: convert from current position to closest node
 	int startIdx = findNode(graph, curPosX, curPosY);
@@ -102,7 +102,13 @@ double computeNextStep(){
 	// find immediate route for user
 	// compute arrow heading (based on user orientation)
 	double theta = heading(graph, path);
-	return theta;
+
+   // TODO: convert from position to orientation
+   // TODO: figure out if needed to turn back
+   // TODO:: then convert from theta to arrow direction
+   displayArrow(theta);
+
+	return;
 }
 
 void getCurrentPosition(){
@@ -390,11 +396,7 @@ int main(void)
 		   location = wbathroom;
 	   } else {
 		   getCurrentPosition(); // find user position
-		   // TODO: convert from position to orientation
-		   // TODO: figure out if needed to turn back
-		   // TODO:: then convert from heading to arrow
-		   double heading = computeNextStep();
-		   displayArrow(heading);
+		   displayNextStep();
 		   HAL_Delay (2000);
 
 		   if (hasArrived()){
