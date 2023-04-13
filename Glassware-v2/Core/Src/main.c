@@ -19,8 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "fatfs.h"
-#include "path.h"
-#include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -29,7 +27,8 @@
 #include "ssd1306.h"
 #include "string.h"
 #include "stdio.h"
-
+#include "stdbool.h"
+#include "path.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -60,12 +59,26 @@ SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN PV */
-enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
-enum selectedLocation {eecs1311 = 0, wbathroom, mbathroom, vending, stairs, none};
+enum menuState {dir = 0, sel_dest = 1, running = 2};
+enum selectedLocation {none = 0, eecs1311, wbathroom, mbathroom, vending, stairs};
 enum menuState menu;
 enum selectedLocation location = none;
 double ** map;     // map storage
 double ** destMap; // map storage
+const int pressed = 0;
+// display settings
+char * curDisp;
+char * nextDisp;
+const char * START = "Press Start";
+const char * ARRIVED = "Hit Mark!";
+const char * CHOOSE = "Set Course";
+const char * EECS1311 = "EECS 1311";
+const char * WBATH = "Women's WC";
+const char * MBATH = "Men's WC";
+const char * VENDING = "Snack Mach";
+const char * STAIRS = "Stairs";
+
+
 Graph * graph; // storage for shortest path algorithm
 double curPosX;
 double curPosY;
@@ -90,10 +103,129 @@ bool hasArrived(){
 	return true;
 }
 
+void initMenu(){
+	SSD1306_Clear();
+	SSD1306_GotoXY(0,0);
+	SSD1306_Puts ("Press Start", &Font_11x18, 1);
+	SSD1306_UpdateScreen(); //display
+}
+
+GPIO_PinState readButton(int idx){
+
+	if (idx == 0){
+		return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
+	} else if (idx == 1) {
+		return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8);
+	} else if (idx == 2) {
+		return HAL_GPIO_ReadPin(GPIOH, GPIO_PIN_3);
+	} else if (idx == 3) {
+		return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7);
+	}
+}
+
+void readButtons(int start, int up, int down, int back){
+//	int start = readButton(0);
+//	int up = readButton(1);
+//	int down = readButton(2);
+//	int back = readButton(3);
+
+	if (menu == dir) {
+		if ( (start == pressed) || (up == pressed) || (down == pressed) || (back = pressed)){
+			menu = sel_dest;
+			return;
+		}
+	} else if (menu == sel_dest) {
+		if (back == pressed) {
+			menu = dir;
+			return;
+		} else if (up == pressed && down == pressed) {
+			return;
+		} else if (up == pressed) {
+			if (location != none) {
+				location--;
+				return;
+			}
+		} else if (down == pressed) {
+			if (location != stairs ) {
+				location++;
+				return;
+			}
+		} else if (start == pressed) {
+			if (location != none) {
+				menu = running;
+				return;
+			}
+		}
+	} else if (menu == running) {
+		if (back == pressed) {
+			menu = dir;
+			location = none;
+			return;
+		}
+	}
+}
+
+void displayLocation(){
+	if (location == none){
+		nextDisp = CHOOSE;
+	} else if (location == eecs1311 ) {
+		nextDisp = EECS1311;
+	} else if (location == wbathroom ) {
+		nextDisp = WBATH;
+	} else if (location == mbathroom ) {
+		nextDisp = MBATH;
+	} else if (location == vending ) {
+		nextDisp = VENDING;
+	} else if (location == stairs ) {
+		nextDisp = STAIRS;
+	}
+}
+
+void WriteToDisplay(char * str){
+	SSD1306_Clear();
+	SSD1306_GotoXY(0,0);
+	SSD1306_Puts (str, &Font_11x18, 1);
+	SSD1306_UpdateScreen(); //display
+}
+
+void displayMenu() {
+
+	if (menu == dir) {
+//		SSD1306_Puts ("Press Start", &Font_11x18, 1);
+		nextDisp = START;
+	} else if (menu == sel_dest) {
+		displayLocation();
+	} else if (menu == running) {
+		getCurrentPosition();
+
+		if (hasArrived()){
+			 location = none;
+			 menu = dir;
+			 // display congrats message
+			 WriteToDisplay(ARRIVED);
+			 nextDisp = ARRIVED;
+			 HAL_Delay(2000);
+		} else {
+			// compute based on algorithm
+			displayNextStep();
+		}
+	}
+
+	if (strcmp(curDisp, nextDisp) != 0) {
+		SSD1306_Clear();
+		SSD1306_GotoXY(0,0);
+		curDisp = nextDisp;
+		SSD1306_Puts (curDisp, &Font_11x18, 1);
+		SSD1306_UpdateScreen(); //display
+	}
+
+}
+
+
 void displayNextStep(){
 
-	// TODO: convert from current position to closest node
-	int startIdx = findNode(graph, curPosX, curPosY);
+	// convert from current position to closest node
+	int startIdx = findClosestNode(graph, curPosX, curPosY);
 	int destinationIdx = findNode(graph, destMap[location][0], destMap[location][1]);
 
 	// find shortest path from current position to destination
@@ -116,24 +248,6 @@ void getCurrentPosition(){
 	curPosX = destMap[0][0];
 	curPosY = destMap[0][1];
 	return;
-}
-
-void displayArrow(int direction){
-	  SSD1306_GotoXY (0,0);
-
-	  if (direction == 0) {
-		  displayArrowRight();
-	  } else if (direction == 1) {
-		  displayArrowLeft();
-	  } else if (direction == 2) {
-		  displayArrowUp();
-	  } else if (direction == 3) {
-		  displayArrowDown();
-	  } else {
-		  // error
-	  }
-
-	  SSD1306_UpdateScreen(); //display
 }
 
 void displayArrowRight(){
@@ -160,6 +274,24 @@ void displayArrowDown(){
 	  // Turn back
 	  SSD1306_Puts ("Back", &Font_11x18, 1);
 	  SSD1306_DrawFilledTriangle(80, 30, 100, 0, 60, 0, SSD1306_COLOR_WHITE);
+}
+
+void displayArrow(int direction){
+//	  SSD1306_GotoXY (0,0);
+
+	  if (direction == 0) {
+		  displayArrowRight();
+	  } else if (direction == 1) {
+		  displayArrowLeft();
+	  } else if (direction == 2) {
+		  displayArrowUp();
+	  } else if (direction == 3) {
+		  displayArrowDown();
+	  } else {
+		  // error
+	  }
+
+//	  SSD1306_UpdateScreen(); //display
 }
 
 void Destination_init(){
@@ -302,80 +434,9 @@ int main(void)
   // Initialize screen
   menu = dir;
   SSD1306_Init();
+  curDisp = START;
 
-//  //DRESULT temp = SD_disk_initialize(0);
-//
-//  // Initialize SD card
-//  // some variables for FatFs
-//  FATFS FatFs; 	//Fatfs handle
-//  FIL fil; 		//File handle
-//  FRESULT fres; //Result after operations
-//  char* filename = "map.txt";
-//
-//
-////  uint8_t buf_tx[1] = {0xFF};
-////  uint8_t buf_rx[1] = {0x00};
-////  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
-////  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
-////  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
-//
-//  fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
-//  if (fres != FR_OK)
-//  {
-//      #ifdef DEBUG
-//	  SSD1306_GotoXY (0,0);
-//	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
-//	  SSD1306_UpdateScreen(); //display
-//      #endif
-////	  while(1);
-//  }
-//
-//  #ifdef DEBUG
-//  DWORD free_clusters, free_sectors, total_sectors;
-//  FATFS* getFreeFs;
-//  fres = f_getfree("", &free_clusters, &getFreeFs);
-//  if (fres != FR_OK)
-//  {
-//	  SSD1306_GotoXY (0,0);
-//	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
-//	  SSD1306_UpdateScreen(); //display
-////	  while(1);
-//  }
-//  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-//  free_sectors = free_clusters * getFreeFs->csize;
-//  #endif
-//
-//  fres = f_open(&fil, filename, FA_READ);
-//  if (fres != FR_OK) {
-//      #ifdef DEBUG
-//	  SSD1306_GotoXY (0,0);
-//	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
-//	  SSD1306_UpdateScreen();
-// 	  #endif
-////	  while(1);
-//  }
-//
-//  BYTE readBuf[50];
-//  TCHAR* rres = f_gets((TCHAR*)readBuf, 50, &fil);
-//  if (rres == 0)
-//  {
-//      #ifdef DEBUG
-//	  SSD1306_GotoXY (0,0);
-//	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
-//	  SSD1306_UpdateScreen();
-//      #endif
-////	  while(1);
-//  }
-//  f_close(&fil);
-//  #ifdef DEBUG
-//  SSD1306_GotoXY (0,0);
-//  SSD1306_Puts(strcat("File: ", filename), &Font_11x18, 1);
-//  SSD1306_GotoXY (11,0);
-//  SSD1306_Puts(readBuf, &Font_11x18, 1);
-//  SSD1306_UpdateScreen();
-//  HAL_Delay(2000);
-//  #endif
-
+  initMenu();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -389,21 +450,10 @@ int main(void)
 //	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
 //	  SSD1306_UpdateScreen(); //display
 //	  HAL_Delay (2000);
+	  //readButtons();
+	  displayMenu();
 
-	   if (location == none){
-		   // UI
-		   // set up interrupts for buttons
-		   location = wbathroom;
-	   } else {
-		   getCurrentPosition(); // find user position
-		   displayNextStep();
-		   HAL_Delay (2000);
 
-		   if (hasArrived()){
-			 location = none;
-			 // display congrats message
-		   }
-	   }
   }
   /* USER CODE END 3 */
 }
@@ -675,10 +725,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(SPI2_SD_CS_GPIO_Port, SPI2_SD_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : PA4 PA15 */
   GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_15;
@@ -694,8 +741,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI2_SD_CS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB2 PB7 PB8 PB9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+  /*Configure GPIO pin : PB2 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -707,17 +754,39 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PH3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+  /*Configure GPIO pins : BACK_Pin UP_Pin START_Pin */
+  GPIO_InitStruct.Pin = BACK_Pin|UP_Pin|START_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : DOWN_Pin */
+  GPIO_InitStruct.Pin = DOWN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DOWN_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	if (GPIO_Pin == START_Pin) {
+		readButtons(0, 1, 1, 1);
+	} else if (GPIO_Pin == UP_Pin) {
+		readButtons(1, 0, 1, 1);
+	} else if (GPIO_Pin == DOWN_Pin) {
+		readButtons(1, 1, 0, 1);
+	} else if (GPIO_Pin == BACK_Pin) {
+		readButtons(1, 1, 1, 0);
+	}
+}
 /* USER CODE END 4 */
 
 /**
