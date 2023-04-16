@@ -1,0 +1,10 @@
+../Core/Src/stm32l4xx_it.c:57:6:SDTimer_Handler	0	static
+../Core/Src/stm32l4xx_it.c:79:6:NMI_Handler	0	static
+../Core/Src/stm32l4xx_it.c:94:6:HardFault_Handler	0	static
+../Core/Src/stm32l4xx_it.c:109:6:MemManage_Handler	0	static
+../Core/Src/stm32l4xx_it.c:124:6:BusFault_Handler	0	static
+../Core/Src/stm32l4xx_it.c:139:6:UsageFault_Handler	0	static
+../Core/Src/stm32l4xx_it.c:154:6:SVC_Handler	0	static
+../Core/Src/stm32l4xx_it.c:167:6:DebugMon_Handler	0	static
+../Core/Src/stm32l4xx_it.c:180:6:PendSV_Handler	0	static
+../Core/Src/stm32l4xx_it.c:193:6:SysTick_Handler	0	static
