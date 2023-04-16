@@ -177,7 +177,7 @@ int main(void)
   data_buf[3] = 12;
   uint8_t tx_size = makeXBeeFrame(XBEE_TRANSMIT_FRAME, 0x01, 4, data_buf, xbee_tx_buf);
   HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
-  HAL_SPI_TransmitReceive(&hspi1, xbee_tx_buf, xbee_rx_buf, tx_size, 10);
+  HAL_SPI_TransmitReceive(&hspi3, xbee_tx_buf, xbee_rx_buf, tx_size, 10);
   HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_3);
 
   /* USER CODE END 2 */

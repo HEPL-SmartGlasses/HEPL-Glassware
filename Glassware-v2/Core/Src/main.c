@@ -27,6 +27,7 @@
 #include "ssd1306.h"
 #include "string.h"
 #include "stdio.h"
+#include "xbee.h"
 
 /* USER CODE END Includes */
 
@@ -59,6 +60,9 @@ SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN PV */
 enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
+uint8_t xbee_rx_buf[32];
+uint16_t rx_size = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -118,7 +122,27 @@ int main(void)
   enum menuState menu = dir;
   SSD1306_Init();
 
-  //DRESULT temp = SD_disk_initialize(0);
+  SSD1306_GotoXY (0,0);
+  SSD1306_Puts ("Printing stuff,", &Font_7x10, 1); // error mounting
+  SSD1306_GotoXY (0,19);
+  SSD1306_Puts ("and more stuff!", &Font_7x10, 1); // error mounting
+  SSD1306_UpdateScreen(); //display
+
+  __enable_irq();
+  uint8_t data_buf[20];
+
+  data_buf[0] = 1;
+  data_buf[1] = 3;
+  data_buf[2] = 9;
+  data_buf[3] = 12;
+
+  XBeeTX(data_buf, 4, xbee_rx_buf);
+
+  while (1)
+  {
+	  HAL_Delay(1000);
+  }
+
 
   // Initialize SD card
   // some variables for FatFs
@@ -126,13 +150,6 @@ int main(void)
   FIL fil; 		//File handle
   FRESULT fres; //Result after operations
   char* filename = "map.txt";
-
-
-//  uint8_t buf_tx[1] = {0xFF};
-//  uint8_t buf_rx[1] = {0x00};
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 1);
-//  HAL_SPI_TransmitReceive(&hspi2, buf_tx, buf_rx, 1, 2);
-//  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, 0);
 
   fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
   if (fres != FR_OK)
@@ -434,11 +451,11 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -470,7 +487,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI2_SD_CS_GPIO_Port, SPI2_SD_CS_Pin, GPIO_PIN_SET);
@@ -479,10 +496,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA4 PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_15;
+  /*Configure GPIO pins : PA4 SPI3_CS_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|SPI3_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -502,11 +522,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : SPI3_ATTN_Pin */
+  GPIO_InitStruct.Pin = SPI3_ATTN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI3_ATTN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PH3 */
   GPIO_InitStruct.Pin = GPIO_PIN_3;
@@ -514,6 +534,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
