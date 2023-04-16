@@ -59,11 +59,26 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define SPI2_SD_CS_Pin GPIO_PIN_0
 #define SPI2_SD_CS_GPIO_Port GPIOB
+<<<<<<< HEAD
+#define BACK_Pin GPIO_PIN_7
+#define BACK_GPIO_Port GPIOB
+#define BACK_EXTI_IRQn EXTI9_5_IRQn
+#define DOWN_Pin GPIO_PIN_3
+#define DOWN_GPIO_Port GPIOH
+#define DOWN_EXTI_IRQn EXTI3_IRQn
+#define UP_Pin GPIO_PIN_8
+#define UP_GPIO_Port GPIOB
+#define UP_EXTI_IRQn EXTI9_5_IRQn
+#define START_Pin GPIO_PIN_9
+#define START_GPIO_Port GPIOB
+#define START_EXTI_IRQn EXTI9_5_IRQn
+=======
 #define SPI3_CS_Pin GPIO_PIN_15
 #define SPI3_CS_GPIO_Port GPIOA
 #define SPI3_ATTN_Pin GPIO_PIN_6
 #define SPI3_ATTN_GPIO_Port GPIOB
 #define SPI3_ATTN_EXTI_IRQn EXTI9_5_IRQn
+>>>>>>> main
 
 /* USER CODE BEGIN Private defines */
 
