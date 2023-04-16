@@ -200,7 +200,7 @@ uint8_t SSD1306_Init(void) {
 	SSD1306_WRITECOMMAND(0xD9); //--set pre-charge period
 	SSD1306_WRITECOMMAND(0x22); //
 	SSD1306_WRITECOMMAND(0xDA); //--set com pins hardware configuration
-	SSD1306_WRITECOMMAND(0x12);
+	SSD1306_WRITECOMMAND(0x02); // 0x12 for 128x64
 	SSD1306_WRITECOMMAND(0xDB); //--set vcomh
 	SSD1306_WRITECOMMAND(0x20); //0x20,0.77xVcc
 	SSD1306_WRITECOMMAND(0x8D); //--set DC-DC enable

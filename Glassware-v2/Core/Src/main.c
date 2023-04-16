@@ -27,8 +27,13 @@
 #include "ssd1306.h"
 #include "string.h"
 #include "stdio.h"
+<<<<<<< HEAD
 #include "stdbool.h"
 #include "path.h"
+=======
+#include "xbee.h"
+
+>>>>>>> main
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,6 +64,7 @@ SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN PV */
+<<<<<<< HEAD
 enum menuState {dir = 0, sel_dest = 1, running = 2};
 enum selectedLocation {none = 0, eecs1311, wbathroom, mbathroom, vending, stairs};
 enum menuState menu;
@@ -82,6 +88,12 @@ const char * STAIRS = "Stairs";
 Graph * graph; // storage for shortest path algorithm
 double curPosX;
 double curPosY;
+=======
+enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
+uint8_t xbee_rx_buf[32];
+uint16_t rx_size = 0;
+
+>>>>>>> main
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -436,7 +448,96 @@ int main(void)
   SSD1306_Init();
   curDisp = START;
 
+<<<<<<< HEAD
   initMenu();
+=======
+  SSD1306_GotoXY (0,0);
+  SSD1306_Puts ("Printing stuff,", &Font_7x10, 1); // error mounting
+  SSD1306_GotoXY (0,19);
+  SSD1306_Puts ("and more stuff!", &Font_7x10, 1); // error mounting
+  SSD1306_UpdateScreen(); //display
+
+  __enable_irq();
+  uint8_t data_buf[20];
+
+  data_buf[0] = 1;
+  data_buf[1] = 3;
+  data_buf[2] = 9;
+  data_buf[3] = 12;
+
+  XBeeTX(data_buf, 4, xbee_rx_buf);
+
+  while (1)
+  {
+	  HAL_Delay(1000);
+  }
+
+
+  // Initialize SD card
+  // some variables for FatFs
+  FATFS FatFs; 	//Fatfs handle
+  FIL fil; 		//File handle
+  FRESULT fres; //Result after operations
+  char* filename = "map.txt";
+
+  fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
+  if (fres != FR_OK)
+  {
+      #ifdef DEBUG
+	  SSD1306_GotoXY (0,0);
+	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
+	  SSD1306_UpdateScreen(); //display
+      #endif
+//	  while(1);
+  }
+
+  #ifdef DEBUG
+  DWORD free_clusters, free_sectors, total_sectors;
+  FATFS* getFreeFs;
+  fres = f_getfree("", &free_clusters, &getFreeFs);
+  if (fres != FR_OK)
+  {
+	  SSD1306_GotoXY (0,0);
+	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
+	  SSD1306_UpdateScreen(); //display
+//	  while(1);
+  }
+  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
+  free_sectors = free_clusters * getFreeFs->csize;
+  #endif
+
+  fres = f_open(&fil, filename, FA_READ);
+  if (fres != FR_OK) {
+      #ifdef DEBUG
+	  SSD1306_GotoXY (0,0);
+	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
+	  SSD1306_UpdateScreen();
+ 	  #endif
+//	  while(1);
+  }
+
+  BYTE readBuf[50];
+  TCHAR* rres = f_gets((TCHAR*)readBuf, 50, &fil);
+  if (rres == 0)
+  {
+      #ifdef DEBUG
+	  SSD1306_GotoXY (0,0);
+	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
+	  SSD1306_UpdateScreen();
+      #endif
+//	  while(1);
+  }
+  f_close(&fil);
+  #ifdef DEBUG
+  SSD1306_GotoXY (0,0);
+  SSD1306_Puts(strcat("File: ", filename), &Font_11x18, 1);
+  SSD1306_GotoXY (11,0);
+  SSD1306_Puts(readBuf, &Font_11x18, 1);
+  SSD1306_UpdateScreen();
+  HAL_Delay(2000);
+  #endif
+
+>>>>>>> main
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -683,11 +784,11 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -719,16 +820,26 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_15, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI2_SD_CS_GPIO_Port, SPI2_SD_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
+<<<<<<< HEAD
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
+=======
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA4 PA15 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_15;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
+>>>>>>> main
+
+  /*Configure GPIO pins : PA4 SPI3_CS_Pin */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|SPI3_CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -748,11 +859,11 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_6;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : SPI3_ATTN_Pin */
+  GPIO_InitStruct.Pin = SPI3_ATTN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(SPI3_ATTN_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BACK_Pin UP_Pin START_Pin */
   GPIO_InitStruct.Pin = BACK_Pin|UP_Pin|START_Pin;
@@ -770,6 +881,10 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+  /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 

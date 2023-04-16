@@ -59,6 +59,7 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define SPI2_SD_CS_Pin GPIO_PIN_0
 #define SPI2_SD_CS_GPIO_Port GPIOB
+<<<<<<< HEAD
 #define BACK_Pin GPIO_PIN_7
 #define BACK_GPIO_Port GPIOB
 #define BACK_EXTI_IRQn EXTI9_5_IRQn
@@ -71,6 +72,13 @@ void Error_Handler(void);
 #define START_Pin GPIO_PIN_9
 #define START_GPIO_Port GPIOB
 #define START_EXTI_IRQn EXTI9_5_IRQn
+=======
+#define SPI3_CS_Pin GPIO_PIN_15
+#define SPI3_CS_GPIO_Port GPIOA
+#define SPI3_ATTN_Pin GPIO_PIN_6
+#define SPI3_ATTN_GPIO_Port GPIOB
+#define SPI3_ATTN_EXTI_IRQn EXTI9_5_IRQn
+>>>>>>> main
 
 /* USER CODE BEGIN Private defines */
 
