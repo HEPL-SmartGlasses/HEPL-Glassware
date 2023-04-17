@@ -59,10 +59,32 @@ SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 
 /* USER CODE BEGIN PV */
-enum menuState {dir = 0, sel_start = 1, sel_dest = 2};
+enum menuState {dir = 0, sel_dest = 1, running = 2};
+enum selectedLocation {none = 0, eecs1311, wbathroom, mbathroom, vending, stairs};
+enum menuState menu;
+enum selectedLocation location = none;
+double ** map;     // map storage
+double ** destMap; // map storage
+const int pressed = 0;
+// display settings
+char * curDisp;
+char * nextDisp;
+const char * START = "Press Start";
+const char * ARRIVED = "Hit Mark!";
+const char * CHOOSE = "Set Course";
+const char * EECS1311 = "EECS 1311";
+const char * WBATH = "Women's WC";
+const char * MBATH = "Men's WC";
+const char * VENDING = "Snack Mach";
+const char * STAIRS = "Stairs";
+
+// xbee vars
 uint8_t xbee_rx_buf[32];
 uint16_t rx_size = 0;
 
+Graph * graph; // storage for shortest path algorithm
+double curPosX;
+double curPosY;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,7 +101,297 @@ static void MX_SPI2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+bool hasArrived(){
+	// check if current position is close to the destination
+	return true;
+}
 
+void initMenu(){
+	SSD1306_Clear();
+	SSD1306_GotoXY(0,0);
+	SSD1306_Puts ("Press Start", &Font_11x18, 1);
+	SSD1306_UpdateScreen(); //display
+}
+
+GPIO_PinState readButton(int idx){
+
+	if (idx == 0){
+		return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_9);
+	} else if (idx == 1) {
+		return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_8);
+	} else if (idx == 2) {
+		return HAL_GPIO_ReadPin(GPIOH, GPIO_PIN_3);
+	} else if (idx == 3) {
+		return HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7);
+	}
+}
+
+void readButtons(int start, int up, int down, int back){
+//	int start = readButton(0);
+//	int up = readButton(1);
+//	int down = readButton(2);
+//	int back = readButton(3);
+
+	if (menu == dir) {
+		if ( (start == pressed) || (up == pressed) || (down == pressed) || (back = pressed)){
+			menu = sel_dest;
+			return;
+		}
+	} else if (menu == sel_dest) {
+		if (back == pressed) {
+			menu = dir;
+			return;
+		} else if (up == pressed && down == pressed) {
+			return;
+		} else if (up == pressed) {
+			if (location != none) {
+				location--;
+				return;
+			}
+		} else if (down == pressed) {
+			if (location != stairs ) {
+				location++;
+				return;
+			}
+		} else if (start == pressed) {
+			if (location != none) {
+				menu = running;
+				return;
+			}
+		}
+	} else if (menu == running) {
+		if (back == pressed) {
+			menu = dir;
+			location = none;
+			return;
+		}
+	}
+}
+
+void displayLocation(){
+	if (location == none){
+		nextDisp = CHOOSE;
+	} else if (location == eecs1311 ) {
+		nextDisp = EECS1311;
+	} else if (location == wbathroom ) {
+		nextDisp = WBATH;
+	} else if (location == mbathroom ) {
+		nextDisp = MBATH;
+	} else if (location == vending ) {
+		nextDisp = VENDING;
+	} else if (location == stairs ) {
+		nextDisp = STAIRS;
+	}
+}
+
+void WriteToDisplay(char * str){
+	SSD1306_Clear();
+	SSD1306_GotoXY(0,0);
+	SSD1306_Puts (str, &Font_11x18, 1);
+	SSD1306_UpdateScreen(); //display
+}
+
+void displayMenu() {
+
+	if (menu == dir) {
+//		SSD1306_Puts ("Press Start", &Font_11x18, 1);
+		nextDisp = START;
+	} else if (menu == sel_dest) {
+		displayLocation();
+	} else if (menu == running) {
+		getCurrentPosition();
+
+		if (hasArrived()){
+			 location = none;
+			 menu = dir;
+			 // display congrats message
+			 WriteToDisplay(ARRIVED);
+			 nextDisp = ARRIVED;
+			 HAL_Delay(2000);
+		} else {
+			// compute based on algorithm
+			displayNextStep();
+		}
+	}
+
+	if (strcmp(curDisp, nextDisp) != 0) {
+		SSD1306_Clear();
+		SSD1306_GotoXY(0,0);
+		curDisp = nextDisp;
+		SSD1306_Puts (curDisp, &Font_11x18, 1);
+		SSD1306_UpdateScreen(); //display
+	}
+
+}
+
+
+void displayNextStep(){
+
+	// convert from current position to closest node
+	int startIdx = findClosestNode(graph, curPosX, curPosY);
+	int destinationIdx = findNode(graph, destMap[location][0], destMap[location][1]);
+
+	// find shortest path from current position to destination
+	int * path = findShortestPath(graph, startIdx, destinationIdx);
+
+	// find immediate route for user
+	// compute arrow heading (based on user orientation)
+	double theta = heading(graph, path);
+
+   // TODO: convert from position to orientation
+   // TODO: figure out if needed to turn back
+   // TODO:: then convert from theta to arrow direction
+   displayArrow(theta);
+
+	return;
+}
+
+void getCurrentPosition(){
+// request data from Foot Board
+	curPosX = destMap[0][0];
+	curPosY = destMap[0][1];
+	return;
+}
+
+void displayArrowRight(){
+	  // Turn Right
+	  SSD1306_Puts ("Right", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(120, 15, 100, 30, 100, 0, SSD1306_COLOR_WHITE);
+	  SSD1306_DrawFilledRectangle(80, 10, 20, 10, SSD1306_COLOR_WHITE);
+}
+
+void displayArrowLeft(){
+	  // Turn Left
+	  SSD1306_Puts ("Left", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(80, 15, 100, 30, 100, 0, SSD1306_COLOR_WHITE);
+	  SSD1306_DrawFilledRectangle(100, 10, 20, 10, SSD1306_COLOR_WHITE);
+}
+
+void displayArrowUp(){
+	  // Move forward
+	  SSD1306_Puts ("Move", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(80, 0, 100, 30, 60, 30, SSD1306_COLOR_WHITE);
+}
+
+void displayArrowDown(){
+	  // Turn back
+	  SSD1306_Puts ("Back", &Font_11x18, 1);
+	  SSD1306_DrawFilledTriangle(80, 30, 100, 0, 60, 0, SSD1306_COLOR_WHITE);
+}
+
+void displayArrow(int direction){
+//	  SSD1306_GotoXY (0,0);
+
+	  if (direction == 0) {
+		  displayArrowRight();
+	  } else if (direction == 1) {
+		  displayArrowLeft();
+	  } else if (direction == 2) {
+		  displayArrowUp();
+	  } else if (direction == 3) {
+		  displayArrowDown();
+	  } else {
+		  // error
+	  }
+
+//	  SSD1306_UpdateScreen(); //display
+}
+
+void Destination_init(){
+	int locNum = 5;
+    destMap = malloc(locNum * sizeof(double *));
+	for (int i = 0; i < locNum; i++){
+		// allocate x/y coordinates
+		destMap[i] = malloc( 2 * sizeof(double));
+	}
+
+	// eecs 1311
+	destMap[0][0] = 16.96;
+	destMap[0][1] = 78.64;
+
+	// womem's bathroom
+	destMap[1][0] = 41.12;
+	destMap[1][1] = 82.48;
+
+	// men's bathroom
+	destMap[0][0] = 48.48;
+	destMap[0][1] = 82.80;
+
+	// vending machine
+	destMap[0][0] = 39.36;
+	destMap[0][1] = 62.48;
+
+	// stairs
+	destMap[0][0] = 48.32;
+	destMap[0][1] = 78.48;
+}
+
+int Map_init_SD(){
+	// open map file from sd card
+
+	// Initialize SD card
+	// some variables for FatFs
+	FATFS FatFs; 	//Fatfs handle
+	FIL fil; 		//File handle
+    char line[100]; // Line buffer
+	FRESULT fres;   //Result after operations
+	char* filename = "map.txt";
+
+	fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
+
+	fres = f_open(&fil, filename, FA_READ);
+    if (fres) return (int)fres;
+
+    int count = 0;
+    while (f_gets(line, sizeof line, &fil)) {
+    	count++;
+    }
+
+    /* Close the file */
+    f_close(&fil);
+
+    map = malloc(count * sizeof(double *));
+	for (int i = 0; i < count; i++){
+		// allocate x/y coordinates
+		map[i] = malloc( 4 * sizeof(double));
+	}
+
+    // Reopen file and read content
+	fres = f_open(&fil, filename, FA_READ);
+    if (fres) return (int)fres;
+
+    /* Read every line and display it */
+    char * token;
+    const char* del = " ";
+
+    int i = 0;
+    while (f_gets(line, sizeof(line), &fil)) {
+    	int j = 0;
+        // printf(line);
+        token = strtok(line, del);
+        double num = atof(token);
+        map[i][j] = num;
+
+        while(token != NULL){
+        	if (j >= 3){ // file is badly formatted
+        		break;
+        	}
+        	j++;
+        	token = strtok(NULL, del);
+        	num = atof(token);
+        	map[i][j] = num;
+        }
+        i++;
+    }
+
+    /* Close the file */
+    f_close(&fil);
+
+    buildGraphFromMap(graph, map, count);
+
+    return 0;
+
+}
 /* USER CODE END 0 */
 
 /**
@@ -118,96 +430,16 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 
+  graph = createGraph();
+  Map_init_SD();
+  Destination_init();
+
   // Initialize screen
-  enum menuState menu = dir;
+  menu = dir;
   SSD1306_Init();
+  curDisp = START;
 
-  SSD1306_GotoXY (0,0);
-  SSD1306_Puts ("Printing stuff,", &Font_7x10, 1); // error mounting
-  SSD1306_GotoXY (0,19);
-  SSD1306_Puts ("and more stuff!", &Font_7x10, 1); // error mounting
-  SSD1306_UpdateScreen(); //display
-
-  __enable_irq();
-  uint8_t data_buf[20];
-
-  data_buf[0] = 1;
-  data_buf[1] = 3;
-  data_buf[2] = 9;
-  data_buf[3] = 12;
-
-  XBeeTX(data_buf, 4, xbee_rx_buf);
-
-  while (1)
-  {
-	  HAL_Delay(1000);
-  }
-
-
-  // Initialize SD card
-  // some variables for FatFs
-  FATFS FatFs; 	//Fatfs handle
-  FIL fil; 		//File handle
-  FRESULT fres; //Result after operations
-  char* filename = "map.txt";
-
-  fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
-  if (fres != FR_OK)
-  {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-Mnt", &Font_11x18, 1); // error mounting
-	  SSD1306_UpdateScreen(); //display
-      #endif
-//	  while(1);
-  }
-
-  #ifdef DEBUG
-  DWORD free_clusters, free_sectors, total_sectors;
-  FATFS* getFreeFs;
-  fres = f_getfree("", &free_clusters, &getFreeFs);
-  if (fres != FR_OK)
-  {
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-GFr", &Font_11x18, 1); // error getting free
-	  SSD1306_UpdateScreen(); //display
-//	  while(1);
-  }
-  total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-  free_sectors = free_clusters * getFreeFs->csize;
-  #endif
-
-  fres = f_open(&fil, filename, FA_READ);
-  if (fres != FR_OK) {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-OpF", &Font_11x18, 1); // error opening file
-	  SSD1306_UpdateScreen();
- 	  #endif
-//	  while(1);
-  }
-
-  BYTE readBuf[50];
-  TCHAR* rres = f_gets((TCHAR*)readBuf, 50, &fil);
-  if (rres == 0)
-  {
-      #ifdef DEBUG
-	  SSD1306_GotoXY (0,0);
-	  SSD1306_Puts ("ErrSD-RdF", &Font_11x18, 1); // error reading file
-	  SSD1306_UpdateScreen();
-      #endif
-//	  while(1);
-  }
-  f_close(&fil);
-  #ifdef DEBUG
-  SSD1306_GotoXY (0,0);
-  SSD1306_Puts(strcat("File: ", filename), &Font_11x18, 1);
-  SSD1306_GotoXY (11,0);
-  SSD1306_Puts(readBuf, &Font_11x18, 1);
-  SSD1306_UpdateScreen();
-  HAL_Delay(2000);
-  #endif
-
+  initMenu();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -217,11 +449,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  SSD1306_GotoXY (0,21);
-	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
-	  SSD1306_UpdateScreen(); //display
+//	  SSD1306_GotoXY (0,0);
+//	  SSD1306_Puts ("HEPL WORLD :)", &Font_11x18, 1);
+//	  SSD1306_UpdateScreen(); //display
+//	  HAL_Delay (2000);
+	  //readButtons();
+	  displayMenu();
 
-	  HAL_Delay (2000);
+
   }
   /* USER CODE END 3 */
 }
@@ -451,11 +686,11 @@ static void MX_SPI3_Init(void)
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
   hspi3.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi3.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi3.Init.DataSize = SPI_DATASIZE_4BIT;
   hspi3.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi3.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi3.Init.NSS = SPI_NSS_SOFT;
-  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   hspi3.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi3.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi3.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -487,22 +722,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_15, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(SPI2_SD_CS_GPIO_Port, SPI2_SD_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOH, GPIO_PIN_3, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PA4 SPI3_CS_Pin */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|SPI3_CS_Pin;
+  /*Configure GPIO pins : PA4 PA15 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_15;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -515,34 +744,52 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(SPI2_SD_CS_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB2 PB7 PB8 PB9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_7|GPIO_PIN_8|GPIO_PIN_9;
+  /*Configure GPIO pin : PB2 */
+  GPIO_InitStruct.Pin = GPIO_PIN_2;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SPI3_ATTN_Pin */
-  GPIO_InitStruct.Pin = SPI3_ATTN_Pin;
+  /*Configure GPIO pin : PB6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : BACK_Pin UP_Pin START_Pin */
+  GPIO_InitStruct.Pin = BACK_Pin|UP_Pin|START_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SPI3_ATTN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PH3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOH, &GPIO_InitStruct);
+  /*Configure GPIO pin : DOWN_Pin */
+  GPIO_InitStruct.Pin = DOWN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(DOWN_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin){
+	if (GPIO_Pin == START_Pin) {
+		readButtons(0, 1, 1, 1);
+	} else if (GPIO_Pin == UP_Pin) {
+		readButtons(1, 0, 1, 1);
+	} else if (GPIO_Pin == DOWN_Pin) {
+		readButtons(1, 1, 0, 1);
+	} else if (GPIO_Pin == BACK_Pin) {
+		readButtons(1, 1, 1, 0);
+	}
+}
 /* USER CODE END 4 */
 
 /**

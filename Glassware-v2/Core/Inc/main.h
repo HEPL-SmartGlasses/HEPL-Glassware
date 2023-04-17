@@ -57,13 +57,23 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define SPI1_CAM_CS_Pin GPIO_PIN_4
+#define SPI1_CAM_CS_GPIO_Port GPIOA
 #define SPI2_SD_CS_Pin GPIO_PIN_0
 #define SPI2_SD_CS_GPIO_Port GPIOB
-#define SPI3_CS_Pin GPIO_PIN_15
-#define SPI3_CS_GPIO_Port GPIOA
-#define SPI3_ATTN_Pin GPIO_PIN_6
-#define SPI3_ATTN_GPIO_Port GPIOB
-#define SPI3_ATTN_EXTI_IRQn EXTI9_5_IRQn
+#define SPI3_XBEE_CS_Pin GPIO_PIN_15
+#define SPI3_XBEE_CS_GPIO_Port GPIOA
+#define SPI3_XBEE_ATTN_Pin GPIO_PIN_6
+#define SPI3_XBEE_ATTN_GPIO_Port GPIOB
+#define SPI3_XBEE_ATTN_EXTI_IRQn EXTI9_5_IRQn
+#define BACK_Pin GPIO_PIN_7
+#define BACK_GPIO_Port GPIOB
+#define DOWN_Pin GPIO_PIN_3
+#define DOWN_GPIO_Port GPIOH
+#define UP_Pin GPIO_PIN_8
+#define UP_GPIO_Port GPIOB
+#define START_Pin GPIO_PIN_9
+#define START_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
