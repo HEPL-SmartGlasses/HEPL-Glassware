@@ -1,9 +1,9 @@
 #include "graph.h"
 #include "list.h"
 
-Entry* findLeastF(List *l);
+Entry findLeastF(List *l);
 
-List* getSucc(Entry* q, Graph* graph);
+List* getSucc(Entry q, Graph* graph);
 
 double distance(int idx1, int idx2, Graph * graph);
 

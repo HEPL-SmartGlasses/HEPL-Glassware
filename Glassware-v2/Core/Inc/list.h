@@ -9,7 +9,7 @@ typedef struct Entry {
 } Entry;
 
 typedef struct NodeList {
-	Entry* val;
+	Entry val;
 	struct NodeList* next;
 	struct NodeList* prev;
 } NodeList;
@@ -21,9 +21,9 @@ typedef struct List {
 
 List* createList();
 
-Entry* createEntry();
+Entry createEntry();
 
-void addList(List * l, Entry* elem);
+void addList(List * l, Entry elem);
 
 void removeList(List * l, int index);
 
@@ -31,4 +31,4 @@ bool isEmptyList(List* l);
 
 int getListSize(List * l);
 
-Entry * getLastElem(List * list);
+Entry getLastElem(List * list);

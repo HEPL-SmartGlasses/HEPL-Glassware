@@ -2,16 +2,16 @@
 #include <limits.h>
 #include <math.h>
 
-Entry* findLeastF(List *l){
-	int f = INT_MAX;
+Entry findLeastF(List *l){
+	double f = DBL_MAX;
 	int i = 0;
 	int idx;
-	Entry* q;
+	Entry q;
 
 	NodeList* l_copy = l->head;
 
 	while(l_copy != NULL) { // traverse through list
-		int f_new = l_copy->val->f;
+		double f_new = l_copy->val.f;
 		if (f_new < f) {
 			f = f_new;
 			q = l_copy->val;
@@ -22,23 +22,23 @@ Entry* findLeastF(List *l){
 	}
 
 	// recreate q so it is not deleted
-	Entry *retq = createEntry(q->index, q->f, q->parent);
+	Entry retq = createEntry(q.index, q.f, q.parent);
 	// remove entry from list
 	removeList(l, idx);
 
 	return retq;
 }
 
-List* getSucc(Entry* q, Graph* graph){
+List* getSucc(Entry q, Graph* graph){
 // return list of successors to q
 		List * succ = createList();
 		for (int i = 0; i < graph->numEdges; i++){
 			int idx1 = graph->edges[i]->elemL, idx2 = graph->edges[i]->elemR;
 
-			if (q->index == idx1){
-				addList(succ, createEntry(idx2, 0, q->index));
-			} else if  (q->index == idx2){
-				addList(succ, createEntry(idx1, 0, q->index));
+			if (q.index == idx1){
+				addList(succ, createEntry(idx2, 0, q.index));
+			} else if  (q.index == idx2){
+				addList(succ, createEntry(idx1, 0, q.index));
 			}
 		}
 
@@ -68,7 +68,7 @@ bool findFList(List * open, int idx, double f){
 // find if open list has any entry with lower f
     NodeList * l_copy = open->head;
     while(l_copy != NULL){
-    	if (l_copy->val->index == idx && l_copy->val->f < f) {
+    	if (l_copy->val.index == idx && l_copy->val.f < f) {
     		return true;
     	}
     	l_copy = l_copy->next;
@@ -89,11 +89,12 @@ int * flipList2array(List * path)
 
 	int i = 0;
 	while (end != NULL){
-		arr[i + 1] = end->val->index;
+		arr[i + 1] = end->val.index;
 		end = end->prev;
 		i++;
 	}
 
+	deleteList(path);
 	return arr;
 }
 
@@ -134,18 +135,18 @@ int* backtrack(List * closed)
     List * path = createList();
 
     NodeList * end_copy = closed->tail;
-    Entry * dest = getLastElem(closed);
+    Entry dest = getLastElem(closed);
 
-    addList(path, dest);
-    int parent = dest->parent;
+    addList(path, createEntry(dest.index, dest.f, dest.parent));
+    int parent = dest.parent;
 
     while (end_copy != NULL) {
-    	Entry* entry = end_copy->val;
-    	int nodeIdx = entry->index;
+    	Entry entry = end_copy->val;
+    	int nodeIdx = entry.index;
 
     	if (parent == nodeIdx) {
     		addList(path, createEntry(nodeIdx, 0, 0));
-    		parent = entry->parent;
+    		parent = entry.parent;
     	} else {
     		end_copy = end_copy->prev;
     		continue;
@@ -153,6 +154,7 @@ int* backtrack(List * closed)
     	end_copy = end_copy->prev;
     }
 
+    deleteList(closed);
     return flipList2array(path);
 }
 
@@ -167,7 +169,7 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 //	    list (you can leave its f at zero)
 	List * closed = createList();
 
-	Entry* entry = createEntry(startIdx, 0.0, 0);
+	Entry entry = createEntry(startIdx, 0.0, 0);
 	addList(open, entry);
 
 //	3.  while the open list is not empty
@@ -175,7 +177,7 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 	//	    a) find the node with the least f on
 	//	       the open list, call it "q"
 	//	    b) pop q off the open list
-			Entry* q = findLeastF(open);
+			Entry q = findLeastF(open);
 	//
 	//	    c) generate q's 8 successors and set their
 	//	       parents to q
@@ -184,20 +186,24 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 			NodeList * succ_copy = succ->head;
 			while (succ_copy != NULL){
 
-				int succIdx = succ_copy->val->index;
+				int succIdx = succ_copy->val.index;
 
 				if (succIdx == destinationIdx){
 					// if successor is the goal, stop search
 					addList(closed, q);
-					addList(closed, createEntry(succIdx, q->f, q->index));
+					addList(closed, createEntry(succIdx, q.f, q.index));
+
+					deleteList(succ);
+					deleteList(open);
+
 					return backtrack(closed);
 				} else {
 					// else, compute both g and h for successor
-					double g = q->f + distance(q->index, succIdx, graph);
+					double g = q.f + distance(q.index, succIdx, graph);
 					double h = distance(destinationIdx, succIdx, graph);
 					double f = g + h;
 
-					succ_copy->val->f = f;
+					succ_copy->val.f = f;
 
 					// iii) if a node with the same position as
 					// successor is in the OPEN list which has a
@@ -215,7 +221,7 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 		            	succ_copy = succ_copy->next;
 		            	continue;
 		            }
-		            addList(open, createEntry(succIdx, f, q->index));
+		            addList(open, createEntry(succIdx, f, q.index));
 
 				}
 				// push q on the closed list
@@ -223,6 +229,11 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 				// iterate
 				succ_copy = succ_copy->next;
 			}
+
+			deleteList(succ);
 	}
+
+	deleteList(open);
+
 	return backtrack(closed);
 }

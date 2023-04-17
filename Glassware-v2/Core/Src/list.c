@@ -9,23 +9,31 @@ List* createList(){
     return list;
 }
 
+void deleteList(List* list)
+{
+	while (list->head != NULL)
+	{
+		removeList(list, 0);
+	}
+}
+
 // List destroyer
 
-Entry* createEntry(int index, double f, int parent){
-	Entry* entry = (Entry *) malloc(sizeof(Entry));
-
-	entry->index = index;
-	entry->f = f;
-	entry->parent = parent;
+Entry createEntry(int index, double f, int parent){
+	Entry entry;
+	entry.index = index;
+	entry.f = f;
+	entry.parent = parent;
 
 	return entry;
 }
 
 // entry destroyer
 
-void addList(List * list, Entry* elem){
+void addList(List * list, Entry elem)
+{
     NodeList* new_node = (NodeList*) malloc(sizeof(NodeList));
-    new_node->val = elem;
+    new_node->val = createEntry(elem.index, elem.f, elem.parent);
     new_node->next = NULL;
 
     if (list->head == NULL) {
@@ -39,12 +47,13 @@ void addList(List * list, Entry* elem){
         list->tail->next = new_node;
         list->tail = new_node;
     }
+
     return;
 }
 
 void removeList(List * list, int index){
 	// if it is empty
-	if (list->head == NULL || index < 0){
+	if ((list->head == NULL) || (index < 0)) {
 		return;
 	}
 
@@ -57,9 +66,7 @@ void removeList(List * list, int index){
 			list->tail = NULL;
 		}
 
-		free(old_head->val);
 		free(old_head);
-
 		return;
 	}
 
@@ -84,7 +91,6 @@ void removeList(List * list, int index){
 	}
 
 	// free memory
-	free(current->val);
 	free(current);
 
 	return;
@@ -108,10 +114,10 @@ int getListSize(List * list)
 	return count;
 }
 
-Entry * getLastElem(List * list)
+Entry getLastElem(List * list)
 {
 	if (list->tail == NULL){
-		return NULL;
+		return createEntry(-1, -1, -1);
 	} else {
 		return list->tail->val;
 	}
