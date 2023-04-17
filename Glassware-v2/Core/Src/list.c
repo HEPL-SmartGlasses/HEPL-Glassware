@@ -1,7 +1,11 @@
 #include "list.h"
+#include "glass_malloc.h"
+
+extern int num_allocated;
+extern int num_freed;
 
 List* createList(){
-    List* list = (List*) malloc(sizeof(List));
+    List* list = (List*) glass_malloc(sizeof(List));
 
     list->head = NULL;
     list->tail = NULL;
@@ -15,6 +19,8 @@ void deleteList(List* list)
 	{
 		removeList(list, 0);
 	}
+
+	glass_free(list);
 }
 
 // List destroyer
@@ -32,7 +38,7 @@ Entry createEntry(int index, double f, int parent){
 
 void addList(List * list, Entry elem)
 {
-    NodeList* new_node = (NodeList*) malloc(sizeof(NodeList));
+    NodeList* new_node = (NodeList*) glass_malloc(sizeof(NodeList));
     new_node->val = createEntry(elem.index, elem.f, elem.parent);
     new_node->next = NULL;
 
@@ -66,7 +72,7 @@ void removeList(List * list, int index){
 			list->tail = NULL;
 		}
 
-		free(old_head);
+		glass_free(old_head);
 		return;
 	}
 
@@ -90,8 +96,8 @@ void removeList(List * list, int index){
 		list->tail = current->prev;
 	}
 
-	// free memory
-	free(current);
+	// glass_free memory
+	glass_free(current);
 
 	return;
 }

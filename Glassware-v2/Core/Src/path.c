@@ -133,6 +133,7 @@ double heading(Graph* graph, int * path){
 int* backtrack(List * closed)
 {
     List * path = createList();
+    int dpath = getListSize(closed);
 
     NodeList * end_copy = closed->tail;
     Entry dest = getLastElem(closed);
@@ -229,11 +230,9 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 				// iterate
 				succ_copy = succ_copy->next;
 			}
-
 			deleteList(succ);
 	}
 
 	deleteList(open);
-
 	return backtrack(closed);
 }

@@ -60,6 +60,9 @@ SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi2;
 SPI_HandleTypeDef hspi3;
 
+extern int num_allocated;
+extern int num_freed;
+
 /* USER CODE BEGIN PV */
 enum menuState {dir = 0, sel_dest = 1, running = 2};
 enum selectedLocation {none = 0, eecs1311, wbathroom, mbathroom, vending, stairs};
@@ -260,8 +263,16 @@ void displayNextStep()
 	else if (3 * M_PI / 2 <= theta && theta <= 2 * M_PI) dir = 3;
 	else dir = -1;
 
-	displayArrow(dir);
-
+	//displayArrow(dir);
+	char* temp[80];
+	SSD1306_Clear();
+	SSD1306_GotoXY(0, 0);
+	sprintf(temp, "Allc: %i", num_allocated);
+	SSD1306_Puts(temp, &Font_7x10, 1);
+	SSD1306_GotoXY(0, 12);
+	sprintf(temp, "Free: %i", num_freed);
+	SSD1306_Puts(temp, &Font_7x10, 1);
+	SSD1306_UpdateScreen();
 	return;
 }
 

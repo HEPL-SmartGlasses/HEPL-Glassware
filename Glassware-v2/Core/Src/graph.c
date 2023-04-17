@@ -62,7 +62,9 @@ void addEdge(Graph* graph, int elemL, int elemR) {
 }
 
 int findNode(Graph* graph, double x, double y) {
-    if (!nodeExists(graph, x, y)) return -1;
+    if (!nodeExists(graph, x, y)) {
+        return -1;
+    }
 
     for (int i = 0; i < graph->numNodes; i++) {
         if (graph->nodes[i]->x == x && graph->nodes[i]->y == y) {
