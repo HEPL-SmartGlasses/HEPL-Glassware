@@ -121,17 +121,17 @@ uint8_t XBeeTX
 
 
 // Receive interrupt
-void HAL_GPIO_EXTI_Callback(uint16_t pin)
-{
-	rx_size = 0;
-	while (!HAL_GPIO_ReadPin(XBEE_ATTN_PORT, XBEE_ATTN_PIN))
-	{
-	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
-		HAL_SPI_Receive(&hspi3, &xbee_rx_buf[rx_size], 1, 2);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 1);
-		rx_size = (rx_size + 1) % 32;
-	}
-}
+//void HAL_GPIO_EXTI_Callback(uint16_t pin)
+//{
+//	rx_size = 0;
+//	while (!HAL_GPIO_ReadPin(XBEE_ATTN_PORT, XBEE_ATTN_PIN))
+//	{
+//	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 0);
+//		HAL_SPI_Receive(&hspi3, &xbee_rx_buf[rx_size], 1, 2);
+//		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 1);
+//		rx_size = (rx_size + 1) % 32;
+//	}
+//}
 
 
 // receives a given XBee command

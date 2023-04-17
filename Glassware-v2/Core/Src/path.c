@@ -77,7 +77,8 @@ bool findFList(List * open, int idx, double f){
     return false;
 }
 
-int * flipList2array(List * path){
+int * flipList2array(List * path)
+{
 	int size = getListSize(path);
 
 	int* arr = malloc((size + 1) * sizeof(int));
@@ -128,7 +129,8 @@ double heading(Graph* graph, int * path){
 
 }
 
-int* backtrack(List * closed){
+int* backtrack(List * closed)
+{
     List * path = createList();
 
     NodeList * end_copy = closed->tail;
@@ -158,7 +160,7 @@ int* findShortestPath(Graph * graph, int startIdx, int destinationIdx){
 // A* Search Algorithm
 
 //	1.  Initialize the open list
-	List * open = createList();;
+	List * open = createList();
 
 //	2.  Initialize the closed list
 //	    put the starting node on the open

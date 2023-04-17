@@ -94,11 +94,13 @@ bool isEmptyList(List* list){
 	return list->head == NULL;
 }
 
-int getListSize(List * list){
+int getListSize(List * list)
+{
 	int count = 0;
 	NodeList* current = list->head;
 
-	while (current != NULL){
+	while (current != NULL)
+	{
 		current = current->next;
 		count++;
 	}
@@ -106,7 +108,8 @@ int getListSize(List * list){
 	return count;
 }
 
-Entry * getLastElem(List * list){
+Entry * getLastElem(List * list)
+{
 	if (list->tail == NULL){
 		return NULL;
 	} else {

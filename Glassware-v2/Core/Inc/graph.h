@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <float.h>
 
 #define MAX_NODES 100
 #define MAX_EDGES 100
