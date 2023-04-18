@@ -76,6 +76,7 @@ char * curDisp;
 char * nextDisp;
 int curDir;
 int nextDir;
+int lastDisp = 0;
 const char * START = "Press Start";
 const char * ARRIVED = "Hit Mark!";
 const char * CHOOSE = "Set Course";
@@ -268,6 +269,7 @@ void displayMenu()
 	}
 
 	if (strcmp(curDisp, nextDisp) != 0) {
+		lastDisp = 0;
 		SSD1306_Clear();
 		SSD1306_GotoXY(0,0);
 		curDisp = nextDisp;
@@ -301,9 +303,10 @@ void displayNextStep()
 	else if (3 * M_PI / 2 <= theta && theta <= 2 * M_PI) nextDir = 3;
 	else nextDir = -1;
 
-	if (nextDir != curDir){
+	if (nextDir != curDir || lastDisp == 0){
 		displayArrow(nextDir);
 		curDir = nextDir;
+		lastDisp = 1;
 	}
 //	char* temp[80];
 //	SSD1306_Clear();
