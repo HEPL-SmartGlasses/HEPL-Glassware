@@ -119,7 +119,7 @@ bool hasArrived()
 {
 	// check if current position is within 3 meters of the destination
 	double dist = sqrt(pow(curPosX - destMap[0][0],  2) + pow(curPosY - destMap[0][1], 2));
-	if (dist > -3 && dist < 3) return true;
+	if (dist > -1.5 && dist < 1.5) return true;
 	return false;
 }
 
@@ -421,7 +421,7 @@ int Map_init_SD(){
 	FIL fil; 		//File handle
 	char line[100]; // Line buffer
 	FRESULT fres;   //Result after operations
-	char* filename = "map.txt";
+	char* filename = "refineMap.txt";
 
 	fres = f_mount(&FatFs, "0:", 1); // 1 = mount now
 

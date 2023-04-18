@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <float.h>
 
-#define MAX_NODES 100
-#define MAX_EDGES 100
+#define MAX_NODES 1000
+#define MAX_EDGES 1000
 
 typedef struct Node {
     double x;

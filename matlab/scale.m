@@ -3,7 +3,7 @@
 h = 5.93 * 2.4 / 0.15;
 w = 7.88 * 2.4 / 0.15;
 
-map = readmatrix("map.txt");
+map = readmatrix("refineMap.txt");
 %% Build Graph Data Structure
 [nodes, edges] = buildGraphFromMap(map);
 graph = struct;

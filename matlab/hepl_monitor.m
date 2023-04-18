@@ -12,11 +12,14 @@
 % 
 % % Close serial port
 % delete(ser);
+%% Refine map
+refineMap();
 
 %% Live Plotting
 
 % create fake xbee data
-xbeePath = [13 12 11 9 7 8];
+% xbeePath = [13 12 11 9 7 8]; % map
+xbeePath = [162 156 145 128 113 121]; % refineMap
 
 % open file for writing
 fid = fopen('data.txt', 'w');
@@ -35,7 +38,7 @@ for i = 1:(length(xbeePath)-1)
     disp(Y)
     disp("   ")
     for j = 1:size(X,2)
-        fprintf(fid, '%s %s %d\n', float2hex(X(j)), float2hex(Y(j)), 0);
+        fprintf(fid, '%s %s %s\n', float2hex(X(j)), float2hex(Y(j)), "00000000");
     end
 end
 
@@ -107,4 +110,31 @@ function [hexStr] = float2hex(f)
     bytes = typecast(single(f), 'uint8');
     hexStr = dec2hex(swapbytes(bytes));
     hexStr = reshape(flip(hexStr.', 2), 1, []);
+end
+
+function [] = refineMap()
+    map = readmatrix("map.txt");
+
+    % open file for writing
+    fid = fopen('refineMap.txt', 'w');
+
+    precision = 1; %m
+    for i = 1:size(map,1)
+        x1 = map(i,1); y1 = map(i,2); x2 = map(i,3); y2 = map(i,4);
+        
+        Nx = ceil(max(abs(x1-x2), abs(y1-y2))/precision);
+
+        X = linspace(x1, x2, Nx);
+        Y = linspace(y1, y2, Nx);
+
+        for j = 1:(size(X,2)-1)
+            fprintf(fid, '%f %f %f %f\n', X(j), Y(j), X(j+1), Y(j+1));
+        end
+    end
+
+
+
+    % close file
+    fclose(fid);
+
 end
