@@ -16,14 +16,16 @@ uint8_t makeXBeeTXFrame
 		uint8_t frame_id,
 		uint8_t data[],
 		uint8_t data_size, // in bytes
-		uint8_t frame[]
+		uint8_t frame[],
+		uint8_t comp
 );
 
 uint8_t XBeeTX
 (
     uint8_t data[],
     uint8_t data_size, // in bytes
-	uint8_t rx_buf[]
+	uint8_t rx_buf[],
+	uint8_t comp
 );
 
 

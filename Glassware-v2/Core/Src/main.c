@@ -113,7 +113,13 @@ static void MX_SPI2_Init(void);
 void sendResetTX()
 {
 	uint8_t buf[3] = { 'R', 'S', 'T' };
-	XBeeTX(buf, 3, xbee_rx_buf);
+	XBeeTX(buf, 3, xbee_rx_buf, 0);
+}
+
+void sendResetDestTX(uint8_t dest)
+{
+	uint8_t buf[4] = { 'R', 'S', 'T', dest };
+	XBeeTX(buf, 4, xbee_rx_buf, 1);
 }
 
 bool hasArrived()
@@ -207,6 +213,7 @@ void readButtons(int start, int up, int down, int back)
 			if (location != none) {
 				menu = running;
 				sendResetTX();
+				sendResetDestTX(location);
 				return;
 			}
 		}

@@ -10,6 +10,7 @@
 // define addresses
 #define GLASSBEE_ADDR 0x0013A2004176EAC6
 #define FOOTBEE_ADDR 0x0013A200410822FF
+#define COMPBEE_ADDR 0x0013A2004176E7FD
 
 // and let the macros do the rest!
 #ifdef GLASSBEE
@@ -63,7 +64,8 @@ uint8_t makeXBeeTXFrame
 		uint8_t frame_id,
 		uint8_t data[],
 		uint8_t data_size, // in bytes
-		uint8_t frame[]
+		uint8_t frame[],
+		uint8_t comp
 )
 {
 	// only do 14 bytes of data to avoid exceeding 32-byte frame size
@@ -77,10 +79,21 @@ uint8_t makeXBeeTXFrame
 	frame[2] = ((frame_size) >> 0) & 0x00FF; // length lower byte
 	frame[3] = frame_type;
 	frame[4] = frame_id;
-	for (int i = 0; i < 8; i++) // write 64-bit dest
+	if (comp == 1)
 	{
-		uint8_t temp = (XBEE_DEST_ADDR >> 8*(7-i));
-		frame[i + 5] = temp;
+		for (int i = 0; i < 8; i++) // write 64-bit dest
+		{
+			uint8_t temp = (COMPBEE_ADDR >> 8*(7-i));
+			frame[i + 5] = temp;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < 8; i++) // write 64-bit dest
+		{
+			uint8_t temp = (XBEE_DEST_ADDR >> 8*(7-i));
+			frame[i + 5] = temp;
+		}
 	}
 	frame[13] = 0xFF; // 16-bit addr upper
 	frame[14] = 0xFE; // 16-bit addr lower
@@ -106,11 +119,12 @@ uint8_t XBeeTX
 (
     uint8_t data[],
     uint8_t data_size, // in bytes
-	uint8_t rx_buf[]
+	uint8_t rx_buf[],
+	uint8_t comp
 )
 {
 	uint8_t frame[64];
-	uint8_t frame_size = makeXBeeTXFrame(XBEE_TRANSMIT_FRAME, 0x01, data, data_size, frame);
+	uint8_t frame_size = makeXBeeTXFrame(XBEE_TRANSMIT_FRAME, 0x01, data, data_size, frame, comp);
 	HAL_GPIO_TogglePin(XBEE_CS_PORT, XBEE_CS_PIN);
 	HAL_StatusTypeDef stat = HAL_SPI_TransmitReceive(XBEE_SPI_HANDLER, frame, rx_buf, frame_size, 2);
 	HAL_GPIO_TogglePin(XBEE_CS_PORT, XBEE_CS_PIN);
