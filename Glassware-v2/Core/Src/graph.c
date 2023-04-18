@@ -79,15 +79,23 @@ int findClosestNode(Graph* graph, double x, double y) {
 
 	double dist = DBL_MAX;
 	int idx = -1;
+	double d_cur = distanceP(x, y, graph->nodes[0]->x, graph->nodes[0]->y);
 
     for (int i = 0; i < graph->numNodes; i++) {
-    	double d_cur = distanceP(x, y, graph->nodes[i]->x, graph->nodes[i]->y);
+    	d_cur = distanceP(x, y, graph->nodes[i]->x, graph->nodes[i]->y);
         if (d_cur < dist) {
+        	dist = d_cur;
             idx = i;
         }
     }
 
     return idx;
+}
+
+double distanceP(double x1, double y1, double x2, double y2){
+    double d = sqrt( pow(x1 - x2, 2) + pow(y1 - y2, 2));
+
+    return d;
 }
 
 void buildGraphFromMap(Graph* graph, double ** map, int map_size){

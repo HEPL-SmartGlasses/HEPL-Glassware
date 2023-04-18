@@ -74,6 +74,8 @@ const int pressed = 0;
 // display settings
 char * curDisp;
 char * nextDisp;
+int curDir;
+int nextDir;
 const char * START = "Press Start";
 const char * ARRIVED = "Hit Mark!";
 const char * CHOOSE = "Set Course";
@@ -90,6 +92,7 @@ uint16_t rx_size = 0;
 Graph * graph; // storage for shortest path algorithm
 double curPosX;
 double curPosY;
+int status;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -126,6 +129,41 @@ void initMenu()
 	SSD1306_GotoXY(0,0);
 	SSD1306_Puts ("Press Start", &Font_11x18, 1);
 	SSD1306_UpdateScreen(); //display
+}
+
+void parseXbeeData(){
+
+	int i = 0;
+	while (xbee_rx_buf[i] != 0x7e) {
+		i++;
+	}
+
+	int frame = xbee_rx_buf[i + 3];
+
+	if (frame != 0x90){
+		return;
+	}
+
+	int xInit = i + 15, yInit = i + 19, sInit = i + 23;
+	//int xEnd = 3, yEnd = 7, sEnd = 11;
+	int packetSize = 4;
+
+	int x = 0;
+	int y = 0;
+	status = 0;
+
+
+	for (int j = 0; j < packetSize; j++){
+		x |= xbee_rx_buf[xInit + j] << ((3-j)*8);
+		y |= xbee_rx_buf[yInit + j] << ((3-j)*8);
+		status |= xbee_rx_buf[sInit + j] << ((3-j)*8);
+
+	}
+
+	curPosX = *((float*) &x);
+	curPosY = *((float*) &y);
+
+
 }
 
 GPIO_PinState readButton(int idx)
@@ -256,23 +294,26 @@ void displayNextStep()
 	// TODO: convert from position to orientation
 	// TODO: figure out if needed to turn back
 	// then convert from theta to arrow direction
-	int dir = 0;
-	if (0 <= theta && theta < M_PI / 2) dir = 0;
-	else if (M_PI / 2 <= theta && theta < M_PI) dir = 1;
-	else if (M_PI <= theta && theta < 3 * M_PI / 2) dir = 2;
-	else if (3 * M_PI / 2 <= theta && theta <= 2 * M_PI) dir = 3;
-	else dir = -1;
 
-	//displayArrow(dir);
-	char* temp[80];
-	SSD1306_Clear();
-	SSD1306_GotoXY(0, 0);
-	sprintf(temp, "Allc: %i", num_allocated);
-	SSD1306_Puts(temp, &Font_7x10, 1);
-	SSD1306_GotoXY(0, 12);
-	sprintf(temp, "Free: %i", num_freed);
-	SSD1306_Puts(temp, &Font_7x10, 1);
-	SSD1306_UpdateScreen();
+	if (0 <= theta && theta < M_PI / 2) nextDir = 0;
+	else if (M_PI / 2 <= theta && theta < M_PI) nextDir = 1;
+	else if (M_PI <= theta && theta < 3 * M_PI / 2) nextDir = 2;
+	else if (3 * M_PI / 2 <= theta && theta <= 2 * M_PI) nextDir = 3;
+	else nextDir = -1;
+
+	if (nextDir != curDir){
+		displayArrow(nextDir);
+		curDir = nextDir;
+	}
+//	char* temp[80];
+//	SSD1306_Clear();
+//	SSD1306_GotoXY(0, 0);
+//	sprintf(temp, "Allc: %i", num_allocated);
+//	SSD1306_Puts(temp, &Font_7x10, 1);
+//	SSD1306_GotoXY(0, 12);
+//	sprintf(temp, "Free: %i", num_freed);
+//	SSD1306_Puts(temp, &Font_7x10, 1);
+//	SSD1306_UpdateScreen();
 	return;
 }
 
@@ -331,6 +372,10 @@ void displayArrow(int direction)
 	}
 
 	SSD1306_UpdateScreen(); //display
+}
+void Start_position(){
+	curPosX = destMap[2][0];
+	curPosY = destMap[2][1];
 }
 
 void Destination_init()
@@ -474,11 +519,13 @@ int main(void)
 	graph = createGraph();
 	Map_init_SD();
 	Destination_init();
+	Start_position();
 
 	// Initialize screen
 	menu = dir;
 	SSD1306_Init();
 	curDisp = START;
+	curDir = -1;
 
 	initMenu();
 	/* USER CODE END 2 */
@@ -822,6 +869,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_15, 1);
 			rx_size = (rx_size + 1) % 64;
 		}
+		parseXbeeData();
 	}
 	else if (GPIO_Pin == START_Pin) {
 		readButtons(0, 1, 1, 1);

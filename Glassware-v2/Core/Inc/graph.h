@@ -37,3 +37,5 @@ void addEdge(Graph* graph, int elemL, int elemR);
 int findNode(Graph* graph, double x, double y);
 
 void buildGraphFromMap(Graph* graph, double ** map, int map_size);
+
+double distanceP(double x1, double y1, double x2, double y2);

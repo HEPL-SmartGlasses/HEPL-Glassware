@@ -58,12 +58,6 @@ double distance(int idx1, int idx2, Graph * graph){
      return d;
 }
 
-double distanceP(int x1, int y1, int x2, int y2){
-    double d = sqrt( pow(x1 - x2, 2) + pow(y1 - y2, 2));
-
-    return d;
-}
-
 bool findFList(List * open, int idx, double f){
 // find if open list has any entry with lower f
     NodeList * l_copy = open->head;
@@ -121,7 +115,7 @@ double heading(Graph* graph, int * path){
 		double norm = sqrt( pow(nextX - curX, 2) + pow(nextY - curY, 2));
 		double theta = acos(dot/norm);
 
-		if ( (nextY - curY) >= 0) {
+		if ( (nextY - curY) < 0) {
 			return theta;
 		} else {
 			return 2 * M_PI - theta;
